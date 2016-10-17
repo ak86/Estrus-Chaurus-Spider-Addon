@@ -12,7 +12,7 @@ int property TentacleSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 3940
+	return 4210
 endFunction
 
 string function GetStringVer()
@@ -81,17 +81,21 @@ event OnConfigInit()
 	Pages[4] = "$ES_PAGE_5"
 	Pages[4] = "$ES_PAGE_6"
 
-	sTentacleAnims = New String[4]
+	sTentacleAnims = New String[6]
 	sTentacleAnims[0] = "Tentacle Double"
 	sTentacleAnims[1] = "Tentacle Side"
 	sTentacleAnims[2] = "Dwemer Machine 2"
 	sTentacleAnims[3] = "Dwemer Machine"
+	sTentacleAnims[4] = "Slime Creature"
+	sTentacleAnims[5] = "Ooze Creature"
 
-	bTentacleAnims = New Bool[4]
+	bTentacleAnims = New Bool[6]
 	bTentacleAnims[0] = false
 	bTentacleAnims[1] = false
 	bTentacleAnims[2] = false
 	bTentacleAnims[3] = false
+	bTentacleAnims[4] = false
+	bTentacleAnims[5] = false
 	
 	sGenderRestriction = New String[3]
 	sGenderRestriction[0] = "$ES_BOTH"
@@ -188,7 +192,7 @@ event OnVersionUpdate(int a_version)
 
 	if (a_version >= 3100 && CurrentVersion < 3100)
 		zzEstrusSwellingButt        = Game.GetFormFromFile(0x00037293, "EstrusChaurus.esp") as GlobalVariable
-		zzEstrusSpiderMaxButtScale = Game.GetFormFromFile(0x0004e263, "EstrusSpider.esp") as GlobalVariable
+		zzEstrusSpiderMaxButtScale  = Game.GetFormFromFile(0x0004e263, "EstrusSpider.esp") as GlobalVariable
 	endIf
 
 	if (a_version >= 3200 && CurrentVersion < 3200)
@@ -245,6 +249,40 @@ event OnVersionUpdate(int a_version)
 		bTentacleAnims[3] = false
 	endIf
 
+	
+	if (a_version >= 4000 && CurrentVersion < 4000)
+		sTentacleAnims = New String[6]
+		sTentacleAnims[0] = "Tentacle Double"
+		sTentacleAnims[1] = "Tentacle Side"
+		sTentacleAnims[2] = "Dwemer Machine 2"
+		sTentacleAnims[3] = "Dwemer Machine"
+		sTentacleAnims[4] = "Slime Creature"
+		sTentacleAnims[5] = "Ooze Creature"
+
+		bTentacleAnims = New Bool[6]
+		bTentacleAnims[0] = false
+		bTentacleAnims[1] = false
+		bTentacleAnims[2] = false
+		bTentacleAnims[3] = false
+		bTentacleAnims[4] = false
+		bTentacleAnims[5] = false
+	endIf
+
+	if (a_version >= 4100 && CurrentVersion < 4100 && CurrentVersion > 0 )
+		debug.MessageBox("Warning: Upgrades of earlier versions of ES+ to version 4.1 are NOT supported. A new game or clean save is required.")
+	endif
+
+	if (a_version >= 4110 && CurrentVersion < 4110)
+		Pages = New String[6]
+		Pages[0] = "$ES_PAGE_0"
+		Pages[1] = "$ES_PAGE_1"
+		Pages[2] = "$ES_PAGE_3"
+		Pages[3] = "$ES_PAGE_4"
+		Pages[4] = "$ES_PAGE_5"
+		Pages[5] = "$ES_PAGE_6"
+	endif
+
+	
 endEvent
 
 ; MENUS -------------------------------------------------------------------------------------------
@@ -290,23 +328,30 @@ event OnPageReset(string a_page)
 ; NODE TESTS --------------------------------------------------------------------------------------
 	bEnableResidualBreast = zzEstrusChaurusResidual.GetValue() as bool
 	bLimitBirthDuration   = zzEstrusSpiderBirth.GetValue() as bool
-	bEnableLeftBreast     = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST, false)
-	bEnableLeftBreast01   = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST01, false)
-	bEnableRightBreast    = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST, false)
-	bEnableRightBreast01  = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST01, false)
-	bEnableLeftButt       = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BUTT, false)
-	bEnableRightButt      = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BUTT, false)
-	bEnableBelly          = NetImmerse.HasNode(kPlayer, NINODE_BELLY, false)
-	bEnableSkirt02        = NetImmerse.HasNode(kPlayer, NINODE_SKIRT02, false)
+	bool bIsFemale        = (kPlayer.GetLeveledActorBase().GetSex() == 1)
 
-	if ( !bEnableLeftBreast || !bEnableRightBreast )
+	if CheckXPMSERequirements(kPlayer, bIsFemale)
+		bEnableSkirt02     = true
+		bEnableBreast      = true
+		bEnableBreast01    = true
+		bEnableButt        = true
+		bEnableBelly       = true
+	else
+		bEnableSkirt02     = XPMSELib.HasNode(kPlayer, NINODE_SKIRT02)
+		bEnableBreast      = XPMSELib.HasNode(kPlayer, NINODE_LEFT_BREAST) && XPMSELib.HasNode(kPlayer, NINODE_RIGHT_BREAST)
+		bEnableBreast01    = XPMSELib.HasNode(kPlayer, NINODE_LEFT_BREAST01) && XPMSELib.HasNode(kPlayer, NINODE_RIGHT_BREAST01)
+		bEnableButt        = XPMSELib.HasNode(kPlayer, NINODE_LEFT_BUTT) && XPMSELib.HasNode(kPlayer, NINODE_RIGHT_BUTT)
+		bEnableBelly       = XPMSELib.HasNode(kPlayer, NINODE_BELLY)
+	endif
+	
+	if ( !bEnableBreast )
 		zzEstrusSwellingBreasts.SetValueInt( 0 )
 		zzEstrusChaurusTorpedoFix.SetValueInt( 0 )
 	endIf
-	if ( !bEnableLeftBreast01 || !bEnableRightBreast01 )
+	if ( !bEnableBreast01 )
 		zzEstrusChaurusTorpedoFix.SetValueInt( 0 )
 	endIf
-	if ( !bEnableLeftButt || !bEnableRightButt )
+	if ( !bEnableButt )
 		zzEstrusSwellingButt.SetValueInt( 0 )
 	endIf	
 	if ( !bEnableBelly )
@@ -407,14 +452,14 @@ event OnPageReset(string a_page)
 			AddHeaderOption("$ES_GROWTH_TITLE")
 			AddToggleOptionST("STATE_GROWTH", "$ES_GROWTH", bSwellingEnabled, iOptionFlag)
 			if bSwellingEnabled
-				if bEnableLeftBreast && bEnableRightBreast
+				if bEnableBreast
 					AddToggleOptionST("STATE_BREAST_SCALING", "$ES_BREAST_SCALING", bTorpedoFixEnabled, iOptionFlag)
 					AddTextOptionST("STATE_BREAST_GROWTH", "$ES_BREAST_GROWTH", swellingSliderList[breastSwellingIdx], iOptionFlag)
 				else
 					AddToggleOptionST("STATE_BREAST_SCALING", "$ES_BREAST_SCALING", bTorpedoFixEnabled, OPTION_FLAG_DISABLED)
 					AddTextOptionST("STATE_BREAST_GROWTH", "$ES_BREAST_GROWTH", swellingSliderList[0], OPTION_FLAG_DISABLED)
 				endIf
-				if bEnableLeftButt && bEnableRightButt
+				if bEnableButt
 					AddTextOptionST("STATE_BUTT_GROWTH", "$ES_BUTT_GROWTH", swellingSliderList[buttSwellingIdx], iOptionFlag)
 				else
 					AddTextOptionST("STATE_BUTT_GROWTH", "$ES_BUTT_GROWTH", swellingSliderList[0], OPTION_FLAG_DISABLED)
@@ -443,29 +488,6 @@ event OnPageReset(string a_page)
 			AddToggleOption(sTentacleAnims[iIndex], bTentacleAnims[iIndex], OPTION_FLAG_DISABLED)
 		endWhile
 	elseIf ( a_page == Pages[2] )
-; COMPANIONS --------------------------------------------------------------------------------------
-		AddHeaderOption("$ES_COMPANIONS_TITLE")
-		if !bRegisterCompanions
-			AddToggleOptionST("STATE_COMPANIONS", "$ES_REGISTER", bRegisterCompanions, iOptionFlag)
-		else
-			AddToggleOptionST("STATE_COMPANIONS", "$ES_UNREGISTER", bRegisterCompanions, iOptionFlag)
-		endIf
-
-		iCount = 0
-		iIndex = me.myActorsList.length
-		while iIndex > 1
-			iIndex -= 1
-			if me.myActorsList[iIndex] != none
-				thisName = me.myActorsList[iIndex].GetLeveledActorBase().GetName()
-				AddTextOption(thisName, "", iOptionFlag)
-				iCount += 1
-			endIf
-		endWhile
-
-		if iCount == 0
-			AddTextOption("$ES_NONE", "", OPTION_FLAG_NONE)
-		endIf
-	elseIf ( a_page == Pages[3] )
 ; HATCHERY ----------------------------------------------------------------------------------------
 		iIndex = 0
 		iCount = 0
@@ -491,7 +513,7 @@ event OnPageReset(string a_page)
 			AddTextOption("$ES_NONE", "", OPTION_FLAG_NONE)
 		endIf
 ; MODS & DLC --------------------------------------------------------------------------------------
-	elseIf ( a_page == Pages[4] )
+	elseIf ( a_page == Pages[3] )
 		if kwDeviousDevices != none
 			AddTextOptionST("STATE_DLCMOD_0", "$EC_DLCMOD_0", "$ES_ENABLED", OPTION_FLAG_NONE)
 		else
@@ -503,20 +525,20 @@ event OnPageReset(string a_page)
 			AddTextOptionST("STATE_DLCMOD_1", "$EC_DLCMOD_1", "$ES_DISABLED", OPTION_FLAG_NONE)
 		endIf
 ; NODE TESTS --------------------------------------------------------------------------------------
-	elseIf ( a_page == Pages[5] )
+	elseIf ( a_page == Pages[4] )
 		SetCursorFillMode(TOP_TO_BOTTOM)
 		AddToggleOptionST("STATE_RESIDUAL_BREAST_TOGGLE", "$ES_RESIDUAL_BREAST", bEnableResidualBreast, iOptionFlag)
 		
-		AddToggleOption("$ES_NINODE_LEFT_BREAST", bEnableLeftBreast, OPTION_FLAG_DISABLED)
-		AddToggleOption("$ES_NINODE_LEFT_BREAST01", bEnableLeftBreast01, OPTION_FLAG_DISABLED)
-		AddToggleOption("$ES_NINODE_RIGHT_BREAST", bEnableRightBreast, OPTION_FLAG_DISABLED)
-		AddToggleOption("$EC_NINODE_RIGHT_BREAST01", bEnableRightBreast01, OPTION_FLAG_DISABLED)
+		AddToggleOption("$ES_NINODE_LEFT_BREAST", bEnableBreast, OPTION_FLAG_DISABLED)
+		AddToggleOption("$ES_NINODE_LEFT_BREAST01", bEnableBreast01, OPTION_FLAG_DISABLED)
+		AddToggleOption("$ES_NINODE_RIGHT_BREAST", bEnableBreast, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_RIGHT_BREAST01", bEnableBreast01, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BREAST_SCALE", "$ES_NINODE_MAX_BREAST_SCALE", zzEstrusSpiderMaxBreastScale.GetValue(), "{1}", iOptionFlag)
 		AddToggleOption("$ES_NINODE_SKIRT02", bEnableBelly, OPTION_FLAG_DISABLED)
 		AddToggleOption("$ES_NINODE_BELLY", bEnableSkirt02, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BELLY_SCALE", "$ES_NINODE_MAX_BELLY_SCALE", zzEstrusSpiderMaxBellyScale.GetValue(), "{1}", iOptionFlag)
-		AddToggleOption("$ES_NINODE_LEFT_BUTT", bEnableLeftButt, OPTION_FLAG_DISABLED)
-		AddToggleOption("$ES_NINODE_RIGHT_BUTT", bEnableRightButt, OPTION_FLAG_DISABLED)
+		AddToggleOption("$ES_NINODE_LEFT_BUTT", bEnableButt, OPTION_FLAG_DISABLED)
+		AddToggleOption("$ES_NINODE_RIGHT_BUTT", bEnableButt, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BUTT_SCALE", "$ES_NINODE_MAX_BUTT_SCALE", zzEstrusSpiderMaxButtScale.GetValue(), "{1}", iOptionFlag)
 
 		SetCursorPosition(1)
@@ -533,7 +555,7 @@ event OnPageReset(string a_page)
 		AddTextOptionST("STATE_NINODE_6", "$ES_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_7", "$ES_NINODE_INFO", "", OPTION_FLAG_NONE)
 ; VERSION CHECK -----------------------------------------------------------------------------------
-	elseIf ( a_page == Pages[6] )
+	elseIf ( a_page == Pages[5] )
 		AddHeaderOption("Estrus Spider v" + GetStringVer())
 		AddToggleOption("$ES_VERSION_OK", (GetVersion() >= 3700), OPTION_FLAG_DISABLED)
 		AddHeaderOption("SKSE v" + skseVersionString() )
@@ -544,8 +566,12 @@ event OnPageReset(string a_page)
 		AddToggleOption("$ES_VERSION_OK", (FNIS.VersionCompare(5,1,0,true) >= 0), OPTION_FLAG_DISABLED)
 		AddHeaderOption("SexLab v" + sexlab.GetStringVer())
 		AddToggleOption("$ES_VERSION_OK", (sexlab.GetVersion() >= 1500), OPTION_FLAG_DISABLED)
-		;AddHeaderOption("Actor Events v" + aemcm.GetStringVer())
-		;AddToggleOption("$ES_VERSION_OK", (aemcm.GetVersion() >= 2200), OPTION_FLAG_DISABLED)
+		AddHeaderOption("XP32MSE v" + StringUtil.Substring(XPMSELib.GetXPMSEVersion(kPlayer, bisFemale) as string, 0, 4))
+		AddToggleOption("$EC_VERSION_OK", (XPMSELib.GetXPMSEVersion(kPlayer, bisFemale) >= 2.8) , OPTION_FLAG_DISABLED)
+		AddHeaderOption("NiOverride Plugin v" + SKSE.GetPluginVersion("NiOverride"))
+		AddToggleOption("$EC_VERSION_OK", (SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION) , OPTION_FLAG_DISABLED)
+		AddHeaderOption("NiOverride Scripts v" + SKSE.GetPluginVersion("NiOverride"))
+		AddToggleOption("$EC_VERSION_OK", (NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION) , OPTION_FLAG_DISABLED) 
 	endIf
 endEvent
 
@@ -609,47 +635,46 @@ state STATE_UNINSTALL
 endState
 state STATE_FORCE_FIX
 	event OnSelectST()
-		while ( Utility.IsInMenuMode() )
-			Utility.Wait( 2.0 )
-		endWhile
-
-		int idx1
-		int idx2
-
-		string[] nodes = new string[8]
-		nodes[0] = "NPC L Breast"
-		nodes[1] = "NPC L Breast01"
-		nodes[2] = "NPC L Butt"
-		nodes[3] = "NPC R Breast"
-		nodes[4] = "NPC R Breast01"
-		nodes[5] = "NPC R Butt"
-		nodes[6] = "SkirtBBone02"
-		nodes[7] = "NPC Belly"
+		SetToggleOptionValueST( true )
+		If ShowMessage("$EC_UPDATE_EXIT")
 		
-		idx1 = me.myActorsList.length
-		while idx1 > 0
-			idx1 -= 1
-			string modName = "ECSA"
-			bool isFemale = false
-			if me.myActorsList[idx1].GetLeveledActorBase().GetSex() == 1
-				isFemale = true
-			else
-				isFemale = false
-			endif
+			;while ( Utility.IsInMenuMode() )
+				Utility.Wait( 0.1 )
+			;endWhile
+
+			int idx1
+			int idx2
+
+			string[] nodes = new string[8]
+			nodes[0] = "NPC L Breast"
+			nodes[1] = "NPC L Breast01"
+			nodes[2] = "NPC L Butt"
+			nodes[3] = "NPC R Breast"
+			nodes[4] = "NPC R Breast01"
+			nodes[5] = "NPC R Butt"
+			nodes[6] = "SkirtBBone02"
+			nodes[7] = "NPC Belly"
+			
+			Actor kActor = Game.GetCurrentCrosshairRef() as Actor
+		
+			If kActor == None
+				kActor = Player
+			Endif
+			bool bIsFemale = (kActor.GetLeveledActorBase().GetSex() == 1)
+
 			idx2 = nodes.length
-			While idx2 > 0
+
+			While idx2 >0
 				idx2 -= 1
 				
-				NiOverride.RemoveNodeTransformScale(me.myActorsList[idx1], false, isFemale, nodes[idx2], modName)
-				if ( idx1 == 0 )
-					NiOverride.RemoveNodeTransformScale(me.myActorsList[idx1], true, isFemale, nodes[idx2], modName)
-				endIf
-				NiOverride.UpdateNodeTransform(me.myActorsList[idx1], false, isFemale, nodes[idx2])
-				NiOverride.UpdateNodeTransform(me.myActorsList[idx1], true, isFemale, nodes[idx2])
+				XPMSELib.SetNodeScale(kActor, bIsFemale , nodes[idx2], 1.0, EC_KEY)
 			endWhile
 
-			me.myActorsList[idx1].QueueNiNodeUpdate()
-		endWhile
+			kActor.QueueNiNodeUpdate()
+			;SetToggleOptionValueST( false )
+		else
+			SetToggleOptionValueST( false )
+		endIf
 	endEvent
 
 	event OnDefaultST()
@@ -1055,34 +1080,6 @@ state STATE_FLUIDS ; TOGGLE
 	endEvent
 endState
 
-; COMPANIONS --------------------------------------------------------------------------------------
-state STATE_COMPANIONS ; TOGGLE
-	event OnSelectST()
-		bRegisterCompanions = !bRegisterCompanions
-		
-		if bRegisterCompanions
-			me.AddCompanions()
-		else
-			me.RemoveCompanions()
-		endIf
-		
-		SetToggleOptionValueST( bRegisterCompanions )
-		ForcePageReset()
-	endEvent
-
-	event OnDefaultST()
-		bRegisterCompanions = false
-		SetToggleOptionValueST( bRegisterCompanions )
-
-		me.RemoveCompanions()
-		ForcePageReset()
-	endEvent
-
-	event OnHighlightST()
-		SetInfoText("$ES_COMPANIONS_INFO")
-	endEvent
-endState
-
 ; MODS & DLC --------------------------------------------------------------------------------------
 state STATE_DLCMOD_0 ; TEXT
 	event OnHighlightST()
@@ -1095,23 +1092,27 @@ state STATE_DLCMOD_1 ; TEXT
 	endEvent
 endState
 
+bool Function CheckXPMSERequirements(Actor akActor, bool isFemale)
+	return Game.GetModByName("CharacterMakingExtender.esp") == 255 && XPMSELib.CheckXPMSEVersion(akActor, isFemale, XPMSE_VERSION, true) && XPMSELib.CheckXPMSELibVersion(XPMSELIB_VERSION) && SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION && NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION
+EndFunction
+
 ; PUBLIC VARIABLES --------------------------------------------------------------------------------
 ; VERSION 0
-GlobalVariable      Property zzEstrusSpiderAddStrip        Auto
-GlobalVariable      Property zzEstrusSpiderForceDrop       Auto
-GlobalVariable      Property zzEstrusDisableNodeResize2      Auto
-GlobalVariable      Property zzEstrusDisablePregnancy2       Auto
+GlobalVariable      Property zzEstrusSpiderAddStrip         Auto
+GlobalVariable      Property zzEstrusSpiderForceDrop        Auto
+GlobalVariable      Property zzEstrusDisableNodeResize2     Auto
+GlobalVariable      Property zzEstrusDisablePregnancy2      Auto
 GlobalVariable      Property zzEstrusIncubationPeriod2      Auto
 GlobalVariable      Property zzEstrusSwellingBreasts        Auto
 GlobalVariable      Property zzEstrusSwellingBelly          Auto
-GlobalVariable      Property zzEstrusSpiderInfestation     Auto
-GlobalVariable      Property zzEstrusSpiderUninstall       Auto
-GlobalVariable      Property zzEstrusSpiderInfected        Auto
-GlobalVariable      Property zzEstrusSpiderMaxBreastScale  Auto
-GlobalVariable      Property zzEstrusSpiderMaxBellyScale   Auto
+GlobalVariable      Property zzEstrusSpiderInfestation      Auto
+GlobalVariable      Property zzEstrusSpiderUninstall        Auto
+GlobalVariable      Property zzEstrusSpiderInfected         Auto
+GlobalVariable      Property zzEstrusSpiderMaxBreastScale   Auto
+GlobalVariable      Property zzEstrusSpiderMaxBellyScale    Auto
 GlobalVariable      Property zzEstrusChaurusTorpedoFix      Auto
-GlobalVariable      Property zzEstrusFertilityChance2        Auto
-MagicEffect         Property zzEstrusBreederEffect2          Auto
+GlobalVariable      Property zzEstrusFertilityChance2       Auto
+MagicEffect         Property zzEstrusBreederEffect2         Auto
 Actor               Property Player                         Auto
 Float[]             Property fIncubationDue                 Auto
 Actor[]             Property kIncubationDue                 Auto
@@ -1130,24 +1131,33 @@ String              Property NINODE_BELLY          = "NPC Belly" AutoReadOnly
 Float               Property NINODE_MAX_SCALE      = 3.0 AutoReadOnly
 Float               Property NINODE_MIN_SCALE      = 0.1 AutoReadOnly
 Float               Property RESIDUAL_MULT_DEFAULT = 1.2 AutoReadOnly
+string              Property ES_KEY                = "Estrus_Spider" AutoReadOnly
+
+; NiOverride version data
+int                      Property NIOVERRIDE_VERSION    = 4 AutoReadOnly
+int                      Property NIOVERRIDE_SCRIPT_VERSION = 4 AutoReadOnly
+
+; XPMSE version data
+float                    Property XPMSE_VERSION         = 3.0 AutoReadOnly
+float                    Property XPMSELIB_VERSION      = 3.0 AutoReadOnly
 
 ; VERSION 10
-;_ae_framework       Property ae                    Auto
+;_ae_framework       Property ae                   Auto
 SexLabFramework     Property SexLab                Auto
 
 ; VERSION 11
-zzEstrusSpiderAE   Property me                    Auto
+zzEstrusSpiderAE   Property me                     Auto
 
 ; VERSION 14
 GlobalVariable      Property zzEstrusChaurusFluids Auto
 
 ; VERSION 21
-zzEstrusSpiderAnim Property tentanims             Auto
+zzEstrusChaurusAnim Property tentanims             Auto
 Bool                Property bAnimRegistered       Auto  Hidden
 
 ; VERSION 3000
-;sslConfigMenu       Property sexlabmcm             Auto
-;_ae_mcm             Property aemcm                 Auto
+;sslConfigMenu       Property sexlabmcm            Auto
+;_ae_mcm             Property aemcm                Auto
 
 ; VERSION 3001
 String              Property TRIGGER_MENU        = "Journal Menu" AutoReadOnly
@@ -1204,8 +1214,7 @@ bool bUninstallMessage     = False
 ; VERSION 6
 Actor kPlayer              = None
 Bool  bDisableNodeChange   = False
-Bool  bEnableLeftBreast    = False
-Bool  bEnableRightBreast   = False
+Bool  bEnableBreast        = False
 Bool  bEnableBelly         = False
 Bool  bEnableSkirt02       = False
 
@@ -1232,10 +1241,8 @@ Bool bRegisterAnimations   = False
 
 ; VERSION 3100
 Int  buttSwellingIdx       = 0
-Bool bEnableLeftButt       = False
-Bool bEnableRightButt      = False
-Bool bEnableLeftBreast01   = False
-Bool bEnableRightBreast01  = False
+Bool bEnableButt           = False
+Bool bEnableBreast01       = False
 
 ; VERSION 3201
 Bool bEnableResidualBreast = False

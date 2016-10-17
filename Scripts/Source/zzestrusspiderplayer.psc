@@ -6,11 +6,3 @@ event OnPlayerLoadGame()
 	( me as zzEstrusSpiderMCMScript ).registerMenus()
 	( me as zzEstrusSpiderevents ).InitModEvents()
 endEvent
-
-event OnCellLoad()
-	Quest me = self.GetOwningQuest()
-
-	if ( me as zzEstrusSpiderMCMScript ).bRegisterCompanions
-		( me as zzEstrusSpiderAE ).AddCompanions()
-	endIf
-endEvent

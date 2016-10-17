@@ -10,7 +10,7 @@ endFunction
 
 Float function eggChain()
 	ObjectReference[] thisEgg = new ObjectReference[13]
-	bool bHasScrotNode        = NetImmerse.HasNode(kTarget, NINODE_GENSCROT, false)
+	bool bHasScrotNode        = XPMSELib.HasNode(kTarget, NINODE_GENSCROT)
 
 	Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 	Int idx = 0
@@ -55,76 +55,56 @@ function oviposition()
 		
 	; BELLY SWELL =====================================================
 	if ( bBellyEnabled )
+	if ( bBellyEnabled )
 		fPregBelly = fPregBelly - fReduction
 
 		if ( fPregBelly <= fOrigBelly )
 			fPregBelly = fOrigBelly
-			finished = true
-		else
-			finished = ( fPregBelly == fOrigBelly )
 		endif
-
-		self.SetNodeScale( kTarget, NINODE_BELLY, fPregBelly)
+		
+		finished = ( fPregBelly == fOrigBelly )
+		
+		SetNodeScaleBelly(kTarget, bIsFemale, fPregBelly)
 	endif
 	
 	; BUTT SWELL ======================================================
 	if ( bButtEnabled )
-		fPregLeftButt  = fPregLeftButt  - fButtReduction
-		fPregRightButt = fPregRightButt - fButtReduction
+		fPregButt  = fPregButt  - fButtReduction
 
-		if ( fPregLeftButt <= fOrigLeftButt || fPregRightButt <= fOrigRightButt )
-			fPregLeftButt  = fOrigLeftButt
-			fPregRightButt = fOrigRightButt
-
-			if ( !bBellyEnabled && !bBreastEnabled )
-				finished = true
-			endIF
+		if ( fPregButt <= fOrigButt )
+			fPregButt  = fOrigButt
+			finished = ( !bBellyEnabled && !bBreastEnabled )
 		endif
 		
-		self.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt)
-		self.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregLeftButt)
+		SetNodeScaleButt(kTarget, bIsFemale, fPregButt)
 	endif
 
 	
 	; BREAST SWELL ====================================================
 	if ( bBreastEnabled )
-		fPregLeftBreast    = fPregLeftBreast - fBreastReduction
-		fPregRightBreast   = fPregRightBreast - fBreastReduction
+		fPregBreast        = fPregBreast - fBreastReduction
 		if bTorpedoFixEnabled
-			fPregLeftBreast01  = fOrigLeftBreast01 * (fOrigLeftBreast / fPregLeftBreast)
-			fPregRightBreast01 = fOrigRightBreast01 * (fOrigRightBreast / fPregRightBreast)
+			fPregBreast01  = fOrigBreast01 * (fOrigBreast / fPregBreast)
 		endIf
 
-		if ( fPregLeftBreast <= fOrigLeftBreast || fPregRightBreast <= fOrigRightBreast)
-			fPregLeftBreast  = fOrigLeftBreast
-			fPregRightBreast = fOrigRightBreast
-
-			if ( !bBellyEnabled && !bButtEnabled )
-				finished = true
-			endIF
+		if ( fPregBreast <= fOrigBreast )
+			fPregBreast = fOrigBreast
+			finished = ( !bBellyEnabled && !bButtEnabled )
 		endif
 
 		if bTorpedoFixEnabled
-			if ( fPregLeftBreast01 < fOrigLeftBreast01 || fPregRightBreast01 < fOrigRightBreast01 )
-				fPregLeftBreast01  = fOrigLeftBreast01
-				fPregRightBreast01 = fOrigRightBreast01
+			if ( fPregBreast01 < fOrigBreast01 )
+				fPregBreast01  = fOrigBreast01
 			endif
 		endif
 		
-		self.SetNodeScale( kTarget, NINODE_LEFT_BREAST, fPregLeftBreast)
-		self.SetNodeScale( kTarget, NINODE_RIGHT_BREAST, fPregRightBreast)
-		if bTorpedoFixEnabled
-			self.SetNodeScale( kTarget, NINODE_LEFT_BREAST01, fPregLeftBreast01)
-			self.SetNodeScale( kTarget, NINODE_RIGHT_BREAST01, fPregRightBreast01)
-		endIf
+		SetNodeScaleBreast(kTarget, bIsFemale, fPregBreast, fPregBreast01)
 	endif
 	
 	if !bBellyEnabled && !bBreastEnabled && !bButtEnabled
 		fPregBelly = fPregBelly - fReduction
-
-		if ( fPregBelly < fOrigBelly )
-			finished = true
-		endif
+		
+		finished = ( fPregBelly < fOrigBelly )
 	endIf
 
 	Utility.Wait( Utility.RandomFloat( fOviparityTime, fOviparityTime * 2.0 ) )
@@ -163,16 +143,6 @@ function triggerNodeUpdate(bool abwait = false)
 	iBreastSwellGlobal = zzEstrusSwellingBreasts.GetValueInt()
 	iBellySwellGlobal  = zzEstrusSwellingBelly.GetValueInt()
 	iButtSwellGlobal   = zzEstrusSwellingButt.GetValueInt()
-
-	if !abwait && !kTarget.IsOnMount() && ( ( bBreastEnabled && iBreastSwellGlobal ) || ( bBellyEnabled && iBellySwellGlobal ) || ( bButtEnabled && iButtSwellGlobal ) )
-		kTarget.QueueNiNodeUpdate()
-	elseIf abwait
-		while ( kTarget.IsOnMount() || Utility.IsInMenuMode() )
-			Utility.Wait( 2.0 )
-		endWhile	
-
-		kTarget.QueueNiNodeUpdate()
-	endIf
 endFunction
 
 event OnUpdateGameTime()
@@ -241,11 +211,9 @@ state INCUBATION_NODE
 			iBreastSwellGlobal = zzEstrusSwellingBreasts.GetValueInt()
 			if ( bBreastEnabled && iBreastSwellGlobal )
 				fBreastSwell       = fInfectionSwell / iBreastSwellGlobal
-				fPregLeftBreast    = fOrigLeftBreast + fBreastSwell
-				fPregRightBreast   = fOrigRightBreast + fBreastSwell
+				fPregBreast        = fOrigBreast + fBreastSwell
 				if bTorpedoFixEnabled
-					fPregLeftBreast01  = fOrigLeftBreast01 * (fOrigLeftBreast / fPregLeftBreast)
-					fPregRightBreast01 = fOrigRightBreast01 * (fOrigRightBreast / fPregRightBreast)
+					fPregBreast01  = fOrigBreast01 * (fOrigBreast / fPregBreast)
 				endIf
 
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
@@ -254,49 +222,28 @@ state INCUBATION_NODE
 					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 				endif
 
-				if ( fPregLeftBreast > NINODE_MAX_SCALE )
-					fPregLeftBreast = NINODE_MAX_SCALE
-				endif
-				if ( fPregRightBreast > NINODE_MAX_SCALE )
-					fPregRightBreast = NINODE_MAX_SCALE
+				if ( fPregBreast > NINODE_MAX_SCALE )
+					fPregBreast = NINODE_MAX_SCALE
 				endif
 				if bTorpedoFixEnabled
-					if ( fPregLeftBreast01 < NINODE_MIN_SCALE )
-						fPregLeftBreast01 = NINODE_MIN_SCALE
-					endif
-					if ( fPregRightBreast01 < NINODE_MIN_SCALE )
-						fPregRightBreast01 = NINODE_MIN_SCALE
+					if ( fPregBreast01 < NINODE_MIN_SCALE )
+						fPregBreast01 = NINODE_MIN_SCALE
 					endif
 				endif
-				if ( fPregLeftBreast > zzEstrusSpiderMaxBreastScale.GetValue() )
-					fPregLeftBreast = zzEstrusSpiderMaxBreastScale.GetValue()
-				endif
-				if ( fPregRightBreast > zzEstrusSpiderMaxBreastScale.GetValue() )
-					fPregRightBreast = zzEstrusSpiderMaxBreastScale.GetValue()
+				if ( fPregBreast > zzEstrusSpiderMaxBreastScale.GetValue() )
+					fPregBreast = zzEstrusSpiderMaxBreastScale.GetValue()
 				endif
 
 				kTarget.SetAnimationVariableFloat("ecBreastSwell", fBreastSwell)
-				self.SetNodeScale( kTarget, NINODE_LEFT_BREAST, fPregLeftBreast)
-				self.SetNodeScale( kTarget, NINODE_RIGHT_BREAST, fPregRightBreast)
+				SetNodeScaleBreast(kTarget, bIsFemale, fPregBreast, fPregBreast01)
+			elseIf ( bBreastEnabled && fPregBreast != fOrigBreast )
+				fPregBreast    = fOrigBreast
 				if bTorpedoFixEnabled
-					self.SetNodeScale( kTarget, NINODE_LEFT_BREAST01, fPregLeftBreast01)
-					self.SetNodeScale( kTarget, NINODE_RIGHT_BREAST01, fPregRightBreast01)
-				endIf
-			elseIf ( bBreastEnabled && ( fPregLeftBreast != fOrigLeftBreast || fPregRightBreast != fOrigRightBreast ) )
-				fPregLeftBreast    = fOrigLeftBreast
-				fPregRightBreast   = fOrigRightBreast
-				if bTorpedoFixEnabled
-					fPregLeftBreast01  = fOrigLeftBreast01
-					fPregRightBreast01 = fOrigRightBreast01
+					fPregBreast01  = fOrigBreast01
 				endIf
 				
 				kTarget.SetAnimationVariableFloat("ecBreastSwell", 0.0)
-				self.SetNodeScale( kTarget, NINODE_LEFT_BREAST, fPregLeftBreast)
-				self.SetNodeScale( kTarget, NINODE_RIGHT_BREAST, fPregRightBreast)
-				if bTorpedoFixEnabled
-					self.SetNodeScale( kTarget, NINODE_LEFT_BREAST01, fPregLeftBreast01)
-					self.SetNodeScale( kTarget, NINODE_RIGHT_BREAST01, fPregRightBreast01)
-				endIf
+				SetNodeScaleBreast(kTarget, bIsFemale, fPregBreast, fPregBreast01)
 			endif
 
 			; BELLY SWELL =====================================================
@@ -322,46 +269,35 @@ state INCUBATION_NODE
 				endif
 
 				kTarget.SetAnimationVariableFloat("ecBellySwell", fBellySwell)
-				self.SetNodeScale( kTarget, NINODE_BELLY, fPregBelly)
+				SetNodeScaleBelly(kTarget, bIsFemale, fPregBelly)
 			elseIf ( bBellyEnabled && fPregBelly != fOrigBelly )
 				fPregBelly = fOrigBelly
 				kTarget.SetAnimationVariableFloat("ecBellySwell", 0.0)
-				self.SetNodeScale( kTarget, NINODE_BELLY, fPregBelly)
+				SetNodeScaleBelly(kTarget, bIsFemale, fPregBelly)
 			endif
 
 			; BUTT SWELL ======================================================
 			iButtSwellGlobal = zzEstrusSwellingButt.GetValueInt()
 			if ( bButtEnabled && iButtSwellGlobal )
-				fButtSwell     = fInfectionSwell / iButtSwellGlobal
-				fPregLeftButt  = fOrigLeftButt  + fButtSwell
-				fPregRightButt = fOrigRightButt + fButtSwell
+				fButtSwell = fInfectionSwell / iButtSwellGlobal
+				fPregButt  = fOrigButt  + fButtSwell
 
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
 					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
 					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 				endif
 
-				if ( fPregLeftButt > NINODE_MAX_SCALE )
-					fPregLeftButt = NINODE_MAX_SCALE 
+				if ( fPregButt > NINODE_MAX_SCALE )
+					fPregButt = NINODE_MAX_SCALE 
 				endif
-				if ( fPregRightButt > NINODE_MAX_SCALE )
-					fPregRightButt = NINODE_MAX_SCALE 
-				endif
-				if ( fPregLeftButt > zzEstrusSpiderMaxButtScale.GetValue() )
-					fPregLeftButt = zzEstrusSpiderMaxButtScale.GetValue()
-				endif
-				if ( fPregRightButt > zzEstrusSpiderMaxButtScale.GetValue() )
-					fPregRightButt = zzEstrusSpiderMaxButtScale.GetValue()
+				if ( fPregButt > zzEstrusSpiderMaxButtScale.GetValue() )
+					fPregButt = zzEstrusSpiderMaxButtScale.GetValue()
 				endif
 
-				self.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt)
-				self.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregRightButt)
-			elseIf ( bButtEnabled && ( fPregLeftButt != fOrigLeftButt || fPregRightButt != fOrigRightButt ) )
-				fPregLeftButt = fOrigLeftButt
-				fPregRightButt = fOrigRightButt
-
-				self.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fPregLeftButt)
-				self.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fPregRightButt)
+				SetNodeScaleButt(kTarget, bIsFemale, fPregButt)
+			elseIf ( bButtEnabled && fPregButt != fOrigButt )
+				fPregButt = fOrigButt
+				SetNodeScaleButt(kTarget, bIsFemale, fPregButt)
 			endif
 
 			kTarget.SetFactionRank(zzEstrusSpiderBreederFaction, Math.Floor(fBellySwell + fBreastSwell) )
@@ -409,6 +345,7 @@ state BIRTHING
 		;iAnimationIndex += 1
 		;Debug.SendAnimationEvent(kTarget, "Arrok_Missionary_A1_S"+iAnimationIndex)
 		Debug.SendAnimationEvent(kTarget, "zzEstrusCommon01Up")
+		bIsAnimating = true
 
 		if ( MCM.zzEstrusSpiderBirth.GetValueInt() == 1 )
 			iBirthingLoops = 1
@@ -428,14 +365,11 @@ state BIRTHING
 		if ( MCM.zzEstrusChaurusResidual.GetValueInt() == 1 )
 			float fResidualScale = MCM.zzEstrusChaurusResidualScale.GetValue()
 
-			fResiLeftBreast  = fOrigLeftBreast * fResidualScale
-			fResiRightBreast = fOrigRightBreast * fResidualScale
+			fResiBreast  = fOrigBreast * fResidualScale
 			if bTorpedoFixEnabled
-				fOrigLeftBreast01  = fOrigLeftBreast01 * (fOrigLeftBreast / fResiLeftBreast)
-				fOrigRightBreast01 = fOrigRightBreast01 * (fOrigRightBreast / fResiRightBreast)
+				fOrigBreast01  = (fOrigBreast / fResiBreast)
 			endIf
-			fOrigLeftBreast  = fResiLeftBreast
-			fOrigRightBreast = fResiRightBreast
+			fOrigBreast  = fResiBreast
 		endIf
 		
 		if kTarget == kPlayer
@@ -473,7 +407,11 @@ state AFTERMATH
 			kTarget.SetDontMove(false)
 		endIf
 
-		Debug.SendAnimationEvent(kTarget, "zzEstrusGetUpFaceUp")
+		if bIsAnimating
+			Debug.SendAnimationEvent(kTarget, "zzEstrusGetUpFaceUp")
+		endIf
+
+		;Debug.SendAnimationEvent(kTarget, "zzEstrusGetUpFaceUp")
 		;Debug.SendAnimationEvent(kTarget, "BleedOutStop")
 		kTarget.RemoveSpell(zzEstrusSpiderBreederAbility)
 	
@@ -491,6 +429,7 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	kCaster            = akCaster
 	kPlayer            = Game.GetPlayer()
 	bDisableNodeChange = zzEstrusDisableNodeResize2.GetValue() as Bool
+	bIsAnimating	   = false
 	
 	sSwellingMsgs      = new String[3]
 	sSwellingMsgs[0]   = "$ES_SWELLING_1_3RD"
@@ -506,8 +445,6 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	fIncubationTime    = Utility.RandomFloat( fMinTime, fMaxTime )
 	fInfectionStart    = Utility.GetCurrentGameTime()
 	fthisIncubation    = fInfectionStart + ( fIncubationTime / 24.0 )
-	bEnableSkirt02     = NetImmerse.HasNode(kTarget, NINODE_SKIRT02, false)
-	bEnableSkirt03     = NetImmerse.HasNode(kTarget, NINODE_SKIRT03, false)
 	bIsFemale          = kTarget.GetLeveledActorBase().GetSex() == 1
 	bTorpedoFixEnabled = zzEstrusChaurusTorpedoFix.GetValueInt() as Bool
 
@@ -531,7 +468,7 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 			MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
 			MCM.kIncubationDue[iIncubationIdx] = kTarget
 			
-			(ES.GetAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
+			(EC.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
 		else
 			kTarget.RemoveSpell(zzEstrusSpiderBreederAbility)
 			return
@@ -541,36 +478,36 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	; SexLab Aroused
 	manageSexLabAroused(0)
 
+	if CheckXPMSERequirements(kTarget, bIsFemale)
+		bEnableSkirt02     = true
+		bEnableSkirt03     = true
+		bEnableBreast      = true
+		bEnableButt        = true
+		bEnableBelly       = true
+	else
+		bEnableSkirt02     = XPMSELib.HasNode(kTarget, NINODE_SKIRT02)
+		bEnableSkirt03     = XPMSELib.HasNode(kTarget, NINODE_SKIRT03)
+		bEnableBreast      = XPMSELib.HasNode(kTarget, NINODE_LEFT_BREAST) && XPMSELib.HasNode(kTarget, NINODE_RIGHT_BREAST)
+		bEnableButt        = XPMSELib.HasNode(kTarget, NINODE_LEFT_BUTT) && XPMSELib.HasNode(kTarget, NINODE_RIGHT_BUTT)
+		bEnableBelly       = XPMSELib.HasNode(kTarget, NINODE_BELLY)
+	endif
+
 	if ( !bDisableNodeChange )
-		; make sure we have loaded 3d to access
-		while ( !kTarget.Is3DLoaded() )
-			Utility.Wait( 1.0 )
-		endWhile
-
-		bEnableLeftBreast  = NetImmerse.HasNode(kTarget, NINODE_LEFT_BREAST, false)
-		bEnableRightBreast = NetImmerse.HasNode(kTarget, NINODE_RIGHT_BREAST, false)
-		bEnableLeftButt    = NetImmerse.HasNode(kTarget, NINODE_LEFT_BUTT, false)
-		bEnableRightButt   = NetImmerse.HasNode(kTarget, NINODE_RIGHT_BUTT, false)
-		bEnableBelly       = NetImmerse.HasNode(kTarget, NINODE_BELLY, false)
-
-		bBreastEnabled     = ( bEnableLeftBreast && bEnableRightBreast && zzEstrusSwellingBreasts.GetValueInt() as bool )
-		bButtEnabled       = ( bEnableLeftButt && bEnableRightButt && zzEstrusSwellingButt.GetValueInt() as bool )
+		bBreastEnabled     = ( bEnableBreast && zzEstrusSwellingBreasts.GetValueInt() as bool )
+		bButtEnabled       = ( bEnableButt && zzEstrusSwellingButt.GetValueInt() as bool )
 		bBellyEnabled      = ( bEnableBelly && zzEstrusSwellingBelly.GetValueInt() as bool )
 
 		if ( bBreastEnabled && kTarget.GetLeveledActorBase().GetSex() == 1 )
-			fOrigLeftBreast  = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST, false)
-			fOrigRightBreast = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST, false)
+			fOrigBreast  = GetNodeTransformScale(kTarget, bIsFemale, NINODE_LEFT_BREAST)
 			if bTorpedoFixEnabled
-				fOrigLeftBreast01  = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BREAST01, false)
-				fOrigRightBreast01 = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BREAST01, false)
+				fOrigBreast01  = GetNodeTransformScale(kTarget, bIsFemale, NINODE_LEFT_BREAST01)
 			endif
 		endif
 		if ( bButtEnabled )
-			fOrigLeftButt    = NetImmerse.GetNodeScale(kTarget, NINODE_LEFT_BUTT, false)
-			fOrigRightButt   = NetImmerse.GetNodeScale(kTarget, NINODE_RIGHT_BUTT, false)
+			fOrigButt    = GetNodeTransformScale(kTarget, bIsFemale, NINODE_LEFT_BUTT)
 		endif
 		if ( bBellyEnabled )
-			fOrigBelly       = NetImmerse.GetNodeScale(kTarget, NINODE_BELLY, false)
+			fOrigBelly       = GetNodeTransformScale(kTarget, bIsFemale, NINODE_BELLY)
 		endif
 	endif
 
@@ -591,7 +528,7 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 		MCM.fIncubationDue[iIncubationIdx] = 0.0
 		MCM.kIncubationDue[iIncubationIdx] = None
 		if kTarget != kPlayer
-			(ES.GetAlias(iIncubationIdx) as ReferenceAlias).Clear()
+			;(ES.GetAlias(iIncubationIdx) as ReferenceAlias).Clear()
 		endif
 	endIf
 
@@ -617,73 +554,20 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 		endWhile
 
 		if ( bBellyEnabled )
-			self.SetNodeScale( kTarget, NINODE_BELLY, fOrigBelly)
+			SetNodeScaleBelly(kTarget, bIsFemale, fOrigBelly)
 		endif
 
 		if ( bButtEnabled )
-			self.SetNodeScale( kTarget, NINODE_LEFT_BUTT, fOrigLeftButt)
-			self.SetNodeScale( kTarget, NINODE_RIGHT_BUTT, fOrigRightButt)
+			SetNodeScaleButt(kTarget, bIsFemale, fOrigButt)
 		endif
 
 		if ( bBreastEnabled )
-			self.SetNodeScale( kTarget, NINODE_LEFT_BREAST, fOrigLeftBreast)
-			self.SetNodeScale( kTarget, NINODE_RIGHT_BREAST, fOrigRightBreast)
-			if bTorpedoFixEnabled
-				self.SetNodeScale( kTarget, NINODE_LEFT_BREAST01, fOrigLeftBreast01)
-				self.SetNodeScale( kTarget, NINODE_RIGHT_BREAST01, fOrigRightBreast01)
-			endIf
+			SetNodeScaleBreast(kTarget, bIsFemale, fOrigBreast, fOrigBreast01)
 		endif
 		
 		triggerNodeUpdate(true)
 	endif
 endEvent
-
-Function SetNodeScale(Actor akActor, string nodeName, float value)
-	string modName = "ECSA"
-	bool isFemale = false
-	if akActor.GetLeveledActorBase().GetSex() == 1
-		isFemale = true
-	else
-		isFemale = false
-	endif
-	if NetImmerse.HasNode(akActor, nodeName, false)
-		If SKSE.GetPluginVersion("NiOverride") >= 3 && NiOverride.GetScriptVersion() >= 2
-			if akActor == Game.GetPlayer()
-				If value != 1.0
-					NiOverride.AddNodeTransformScale(akActor, false, isFemale, nodeName, modName, value)
-					NiOverride.AddNodeTransformScale(akActor, true, isFemale, nodeName, modName, value)
-				Else
-					NiOverride.RemoveNodeTransformScale(akActor, false, isFemale, nodeName, modName)
-					NiOverride.RemoveNodeTransformScale(akActor, true, isFemale, nodeName, modName)
-				Endif
-				NiOverride.UpdateNodeTransform(akActor, true, isFemale, nodeName)
-			else
-				If value != 1.0
-					NiOverride.AddNodeTransformScale(akActor, false, isFemale, nodeName, modName, value)
-				Else
-					NiOverride.RemoveNodeTransformScale(akActor, false, isFemale, nodeName, modName)
-				Endif
-			Endif
-			NiOverride.UpdateNodeTransform(akActor, false, isFemale, nodeName)
-		Else
-			if akActor == Game.GetPlayer()
-				NetImmerse.SetNodeScale(akActor, nodeName, value, true)
-			Endif
-			NetImmerse.SetNodeScale(akActor, nodeName, value, false)
-		Endif
-	Endif
-EndFunction
-
-float Function GetNodeScale(Actor akActor, string nodeName)
-	string modName = "ECSA"
-	bool isFemale = false
-	if akActor.GetLeveledActorBase().GetSex() == 1
-		isFemale = true
-	else
-		isFemale = false
-	endif
-	return NiOverride.GetNodeTransformScale(akActor, false, isFemale, nodeName, modName)
-EndFunction
 
 function stripActor(actor akVictim)
 
@@ -721,15 +605,38 @@ function StripItem(actor akVictim, form ItemRef)
 	endif
 endfunction
 
+Function SetNodeScaleBelly(Actor akActor, bool isFemale, float value)
+	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_BELLY, value, ES_KEY)
+EndFunction
+
+Function SetNodeScaleButt(Actor akActor, bool isFemale, float value)
+	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BUTT, value, ES_KEY)
+	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BUTT, value, ES_KEY)
+EndFunction
+
+Function SetNodeScaleBreast(Actor akActor, bool isFemale, float value, float value01)
+	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BREAST, value, ES_KEY)
+	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BREAST, value, ES_KEY)
+	if bTorpedoFixEnabled
+		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BREAST01, value01, ES_KEY)
+		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BREAST01, value01, ES_KEY)
+	endIf
+EndFunction
+
+float Function GetNodeTransformScale(Actor akActor, bool isFemale, string nodeName)
+	return NiOverride.GetNodeTransformScale(akActor, false, isFemale, nodeName, ES_KEY)
+EndFunction
+
+bool Function CheckXPMSERequirements(Actor akActor, bool isFemale)
+	return Game.GetModByName("CharacterMakingExtender.esp") == 255 && XPMSELib.CheckXPMSEVersion(akActor, isFemale, XPMSE_VERSION, true) && XPMSELib.CheckXPMSELibVersion(XPMSELIB_VERSION) && SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION && NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION
+EndFunction		
 
 Actor kTarget            = None
 Actor kCaster            = None
 Actor kPlayer            = None
 Bool  bDisableNodeChange = False
-Bool  bEnableLeftBreast  = False
-Bool  bEnableRightBreast = False
-Bool  bEnableLeftButt    = False
-Bool  bEnableRightButt   = False
+Bool  bEnableBreast      = False
+Bool  bEnableButt        = False
 Bool  bEnableBelly       = False
 Bool  bEnableSkirt02     = False
 Bool  bEnableSkirt03     = False
@@ -739,20 +646,13 @@ Bool  bBellyEnabled      = False
 Bool  bUninstall         = False
 Bool  bIsFemale          = False
 Bool  bTorpedoFixEnabled = True
-Float fOrigLeftBreast    = 1.0
-Float fPregLeftBreast    = 1.0
-Float fResiLeftBreast    = 1.0
-Float fOrigLeftBreast01  = 1.0
-Float fPregLeftBreast01  = 1.0
-Float fOrigLeftButt      = 1.0
-Float fPregLeftButt      = 1.0
-Float fOrigRightBreast   = 1.0
-Float fPregRightBreast   = 1.0
-Float fResiRightBreast   = 1.0
-Float fOrigRightBreast01 = 1.0
-Float fPregRightBreast01 = 1.0
-Float fOrigRightButt     = 1.0
-Float fPregRightButt     = 1.0
+Float fOrigBreast        = 1.0
+Float fPregBreast        = 1.0
+Float fResiBreast        = 1.0
+Float fOrigBreast01      = 1.0
+Float fPregBreast01      = 1.0
+Float fOrigButt      = 1.0
+Float fPregButt          = 1.0
 Float fOrigBelly         = 1.0
 Float fPregBelly         = 1.0
 Float fInfectionStart    = 0.0
@@ -777,35 +677,37 @@ Int iBirthingLoops       = 3
 ; SexLab Aroused
 Int iOrigSLAExposureRank = -3
 Int iAnimationIndex      = 1
+bool bIsAnimating		 = false
 
 String[] sSwellingMsgs
 
 Quest				     Property ES                             Auto
-zzEstrusSpiderMCMscript Property MCM                            Auto 
+zzEstrusSpiderMCMscript  Property MCM                            Auto 
 
 Armor                    Property zzEstrusChaurusFluid           Auto
 Armor                    Property zzEstrusChaurusRMilk           Auto
 Armor                    Property zzEstrusChaurusLMilk           Auto
 Faction                  Property CurrentFollowerFaction         Auto
-Faction                  Property zzEstrusSpiderBreederFaction  Auto
+Faction                  Property zzEstrusSpiderBreederFaction   Auto
 Faction                  Property SexLabAnimatingFaction         Auto
-GlobalVariable           Property zzEstrusDisableNodeResize2      Auto
-GlobalVariable           Property zzEstrusIncubationPeriod2       Auto
+GlobalVariable           Property zzEstrusDisableNodeResize2     Auto
+GlobalVariable           Property zzEstrusIncubationPeriod2      Auto
 GlobalVariable           Property zzEstrusSwellingBreasts        Auto
 GlobalVariable           Property zzEstrusSwellingBelly          Auto
 GlobalVariable           Property zzEstrusSwellingButt           Auto
-GlobalVariable           Property zzEstrusSpiderUninstall       Auto
-GlobalVariable           Property zzEstrusSpiderInfected        Auto
-GlobalVariable           Property zzEstrusSpiderMaxBreastScale  Auto  
-GlobalVariable           Property zzEstrusSpiderMaxBellyScale   Auto
-GlobalVariable           Property zzEstrusSpiderMaxButtScale    Auto
+GlobalVariable           Property zzEstrusSpiderUninstall        Auto
+GlobalVariable           Property zzEstrusSpiderInfected         Auto
+GlobalVariable           Property zzEstrusSpiderMaxBreastScale   Auto  
+GlobalVariable           Property zzEstrusSpiderMaxBellyScale    Auto
+GlobalVariable           Property zzEstrusSpiderMaxButtScale     Auto
 GlobalVariable           Property zzEstrusChaurusTorpedoFix      Auto  
-Ingredient               Property zzSpiderEggs                  Auto
-Spell                    Property zzEstrusSpiderBreederAbility  Auto
+Ingredient               Property zzSpiderEggs                   Auto
+Spell                    Property zzEstrusSpiderBreederAbility   Auto
 Sound                    Property zzEstrusBreastPainMarker       Auto
 Static                   Property xMarker                        Auto
 Float                    Property fIncubationTime                Auto
 
+string                   Property EC_KEY                = "Estrus_Chaurus" AutoReadOnly
 String                   Property NINODE_LEFT_BREAST    = "NPC L Breast" AutoReadOnly
 String                   Property NINODE_LEFT_BREAST01  = "NPC L Breast01" AutoReadOnly
 String                   Property NINODE_LEFT_BUTT      = "NPC L Butt" AutoReadOnly
@@ -820,3 +722,11 @@ String                   Property NINODE_GENSCROT       = "NPC GenitalsScrotum [
 String                   Property NINODE_EGG            = "Egg:0" AutoReadOnly
 Float                    Property NINODE_MAX_SCALE      = 3.0 AutoReadOnly
 Float                    Property NINODE_MIN_SCALE      = 0.1 AutoReadOnly
+
+; NiOverride version data
+int                      Property NIOVERRIDE_VERSION    = 4 AutoReadOnly
+int                      Property NIOVERRIDE_SCRIPT_VERSION = 4 AutoReadOnly
+
+; XPMSE version data
+float                    Property XPMSE_VERSION         = 3.0 AutoReadOnly
+float                    Property XPMSELIB_VERSION      = 3.0 AutoReadOnly
