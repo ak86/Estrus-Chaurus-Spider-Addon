@@ -467,7 +467,7 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 			MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
 			MCM.kIncubationDue[iIncubationIdx] = kTarget
 			
-			(EC.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
+			(ES.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
 		else
 			kTarget.RemoveSpell(zzEstrusSpiderBreederAbility)
 			return
@@ -706,7 +706,7 @@ Sound                    Property zzEstrusBreastPainMarker       Auto
 Static                   Property xMarker                        Auto
 Float                    Property fIncubationTime                Auto
 
-string                   Property EC_KEY                = "Estrus_Chaurus" AutoReadOnly
+string                   Property ES_KEY                = "Estrus_Spider" AutoReadOnly
 String                   Property NINODE_LEFT_BREAST    = "NPC L Breast" AutoReadOnly
 String                   Property NINODE_LEFT_BREAST01  = "NPC L Breast01" AutoReadOnly
 String                   Property NINODE_LEFT_BUTT      = "NPC L Butt" AutoReadOnly

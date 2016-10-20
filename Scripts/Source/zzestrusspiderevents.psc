@@ -103,7 +103,7 @@ bool function OnESStartAnimation(Form Sender, form akTarget, int intAnim, bool b
 		if intAnim == -1 && SexlabValidation != -12 ; Exclude Child Races
 			Oviposition(akActor, false)
 		elseif SexlabValidation == 1
-			DoECAnimation(akActor, intAnim, bUseFX, intUseAlarm, bUseCrowdControl)
+			DoESAnimation(akActor, intAnim, bUseFX, intUseAlarm, bUseCrowdControl)
 		else
 			return false
 		endif
@@ -327,13 +327,13 @@ event ESAnimStage(string hookName, string argString, float argNum, form sender)
 			if  animation.name == "Tentacle Side"
 				ESArmor = zzEstrusSpiderParasite
 			elseif animation.name == "Slime Creature"
-					ECArmor = zzEstrusChaurusEtc02
+					ESArmor = zzEstrusChaurusEtc02
 					utility.wait(0.2) ;Sync with Anim
 			else
 				if animation.name == "Dwemer Machine"
-					ECArmor = zzEstrusSpiderDwemerBinders
+					ESArmor = zzEstrusSpiderDwemerBinders
 				else
-					ECArmor = zzEstrusSpiderDwemerBelt
+					ESArmor = zzEstrusSpiderDwemerBelt
 				endif
 			endif
 			actorList[0].RemoveItem(ESArmor, 1, true)
@@ -398,7 +398,7 @@ event ESAnimEnd(string hookName, string argString, float argNum, form sender)
 
 endevent
 
-Function Oviposition(actor akVictim)
+Function Oviposition(actor akVictim, bool UseParasiteSpell = true)
 	if akVictim.IsInFaction(zzEstrusSpiderBreederFaction)
 		return
 	endIf

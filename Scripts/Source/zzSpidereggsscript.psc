@@ -4,7 +4,7 @@ GlobalVariable            Property zzEstrusFertilityChance2  Auto
 GlobalVariable            Property zzEstrusSpiderInfestation  Auto  
 ActorBase                 Property zzEncSpiderHachling  Auto  
 ImpactDataSet             Property MAGSpiderSpitImpactSet  Auto  
-zzEstrusSpiderMCMScript  Property MCM Auto
+zzEstrusSpiderMCMScript   Property MCM Auto
 
 Bool bIsTested             = False
 Actor SpiderHachling      = None

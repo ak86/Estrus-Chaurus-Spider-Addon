@@ -145,7 +145,7 @@ event OnVersionUpdate(int a_version)
 	endIf
 
 	if (a_version >= 21 && CurrentVersion < 21)
-		tentanims = ( self as Quest ) as zzEstrusSpiderAnim
+		tentanims = ( self as Quest ) as zzEstrusChaurusAnim
 	endIf
 
 	if (a_version >= 3000 && CurrentVersion < 3000)
@@ -667,7 +667,7 @@ state STATE_FORCE_FIX
 			While idx2 >0
 				idx2 -= 1
 				
-				XPMSELib.SetNodeScale(kActor, bIsFemale , nodes[idx2], 1.0, EC_KEY)
+				XPMSELib.SetNodeScale(kActor, bIsFemale , nodes[idx2], 1.0, ES_KEY)
 			endWhile
 
 			kActor.QueueNiNodeUpdate()

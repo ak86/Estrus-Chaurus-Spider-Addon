@@ -1,4 +1,4 @@
-Scriptname zzestrusSpideraliasscript extends activemagiceffect
+Scriptname zzestrusspidersaliasscript extends ReferenceAlias
 
 int function minInt(int iA, int iB)
 	if iA < iB
@@ -778,7 +778,7 @@ Sound                    Property zzEstrusBreastPainMarker       Auto
 Static                   Property xMarker                        Auto
 Float                    Property fIncubationTime                Auto
 
-string                   Property EC_KEY                = "Estrus_Chaurus" AutoReadOnly
+string                   Property ES_KEY                = "Estrus_Spider" AutoReadOnly
 String                   Property NINODE_LEFT_BREAST    = "NPC L Breast" AutoReadOnly
 String                   Property NINODE_LEFT_BREAST01  = "NPC L Breast01" AutoReadOnly
 String                   Property NINODE_LEFT_BUTT      = "NPC L Butt" AutoReadOnly
