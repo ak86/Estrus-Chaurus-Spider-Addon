@@ -1,1 +1,1 @@
-# Estrus Chaurus Spider Addon v4.21
+# Estrus Chaurus Spider Addon

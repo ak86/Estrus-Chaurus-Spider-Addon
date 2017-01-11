@@ -2,8 +2,6 @@ Scriptname zzestrusSpiderevents extends Quest
 
 zzEstrusSpiderMCMScript  property mcm Auto
 
-SexLabFramework  property SexLab Auto
-
 Actor[] sexActors
 
 sslBaseAnimation[] animations
@@ -13,16 +11,13 @@ actor Property PlayerRef Auto
 faction property ESTentaclefaction Auto
 faction property ESVictimfaction Auto
 faction property zzEstrusSpiderExclusionFaction  auto
-faction property zzEstrusSpiderBreederFaction auto
 faction property CurrentFollowerFaction auto
-faction property SexlabAnimatingFaction auto
 
-armor   property zzEstrusSpiderDwemerBinders  auto
-armor   property zzEstrusSpiderDwemerBelt  auto
+armor  property zzEstrusSpiderDwemerBinders  auto
+armor  property zzEstrusSpiderDwemerBelt  auto
 armor  property zzEstrusSpiderParasite auto 
 armor  property zzEstrusChaurusEtc02 auto 
 
-spell property zzEstrusSpiderBreederAbility auto
 spell property zzSpiderParasite  auto 
 spell property DwemerExhaustion Auto
 
@@ -44,6 +39,7 @@ int EventFxID0 = 0
 int EventFxID1 = 0
 
 bool dDLoaded = false
+bool UseESFx = true
 
 zadlibs dDlibs = None
 
@@ -74,12 +70,17 @@ zadlibs dDlibs = None
 ;
 ;************************************
 ; Please do not link directly to ES functions - they are likely to change and break your mod!
+;	Impregnation event
+;	int ESOvi = ModEvent.Create("ESOvi")
+;  	ModEvent.PushForm(ESOvi, akActor)             ; Form			actor it impregnate
+;  	ModEvent.Send(ESOvi)
 
 function InitModEvents()
 
 	RegisterForModEvent("ESStartAnimation", "OnESStartAnimation")
+	RegisterForModEvent("ESOvi", "Ovi")
 	
-	if mcm.kwDeviousDevices != None && !dDLoaded
+	if !dDLoaded
 		dDlibs = Game.GetFormFromFile(0x0000F624, "Devious Devices - Integration.esm") as Zadlibs
 		if dDlibs != None
 			debug.trace("_ES_::Loaded dD Integration")
@@ -99,7 +100,7 @@ bool function OnESStartAnimation(Form Sender, form akTarget, int intAnim, bool b
 	Bool invalidateVictim = !bGenderOk || akActor.IsInFaction(zzEstrusSpiderExclusionFaction) || akActor.IsBleedingOut() || akActor.isDead()
 
 	if !invalidateVictim 
-		int SexlabValidation = Sexlab.ValidateActor(akActor)
+		int SexlabValidation = mcm.SexLab.ValidateActor(akActor)
 		if intAnim == -1 && SexlabValidation != -12 ; Exclude Child Races
 			Oviposition(akActor, false)
 		elseif SexlabValidation == 1
@@ -119,6 +120,7 @@ function DoESAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 		bool isPlayer = (akVictim == PlayerRef)
 		string EstrusType
 		string strVictimRefid = akVictim.getformid() as string
+		UseESFx = UseFx
 
 		int EstrusID = AnimID
 
@@ -160,13 +162,11 @@ function DoESAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 		akVictim.StopCombatAlarm()
 		akVictim.StopCombat()
 	
-		animations   = SexLab.GetAnimationsByTag(1, "Estrus", EstrusType)
+		animations   = mcm.SexLab.GetAnimationsByTag(1, "Estrus", EstrusType)
 		sexActors    = new actor[1]
 		sexActors[0] = akVictim
 		RegisterForModEvent("AnimationStart_" + strVictimRefid, "ESAnimStart")
-		If UseFX
-			RegisterForModEvent("StageEnd_" + strVictimRefid, "ESAnimStage")
-		Endif
+		RegisterForModEvent("StageEnd_" + strVictimRefid, "ESAnimStage")
 		RegisterForModEvent("AnimationEnd_" + strVictimRefid,   "ESAnimEnd")
 		If dDArmbinder
 			if isPlayer
@@ -194,7 +194,7 @@ function DoESAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 			akVictim.CreateDetectionEvent(akVictim, UseAlarm)
 		endif
 
-		if SexLab.StartSex(sexActors, animations, akVictim, none, false, strVictimRefid) > -1
+		if mcm.SexLab.StartSex(sexActors, animations, akVictim, none, false, strVictimRefid) > -1
 
 			if isplayer && UseCrowdControl
 				zzestruschaurusSpectators.start()
@@ -206,8 +206,8 @@ endFunction
 
 event ESAnimStart(string hookName, string argString, float argNum, form sender)
 	
-	actor[] actorList = SexLab.HookActors(argString)
-	sslBaseAnimation animation = SexLab.HookAnimation(argString)
+	actor[] actorList = mcm.SexLab.HookActors(argString)
+	sslBaseAnimation animation = mcm.SexLab.HookAnimation(argString)
 	string strVictimRefid = actorList[0].getformid() as string
 	bool isPlayer = (actorlist[0] == PlayerRef)
 	armor zzEstrusArmorItem = none
@@ -259,15 +259,15 @@ endevent
 
 event ESAnimStage(string hookName, string argString, float argNum, form sender)
 	
-	int stage = SexLab.HookStage(argString)
-	actor[] actorList = SexLab.HookActors(argString)
+	int stage = mcm.SexLab.HookStage(argString)
+	actor[] actorList = mcm.SexLab.HookActors(argString)
 	bool isPlayer = (actorlist[0] == PlayerRef)
-	sslBaseAnimation animation = SexLab.HookAnimation(argString)
+	sslBaseAnimation animation = mcm.SexLab.HookAnimation(argString)
 	armor ESArmor = none
 
 	if animation.hastag("Tentacle") ||  animation.hastag("Slime")  ||  animation.hastag("Ooze") 
 		if stage >= 2 && stage < 9 
-			SexLab.ApplyCum(actorlist[0], 5)
+			mcm.SexLab.ApplyCum(actorlist[0], 5)
 		endif
 		
 		if stage < 9
@@ -286,22 +286,24 @@ event ESAnimStage(string hookName, string argString, float argNum, form sender)
 			;endif
 		;endif
 
-		if stage == 7 && !(mcm.zzEstrusDisablePregnancy2.GetValueInt() as Bool)
+		if stage == 7 && !(mcm.zzEstrusDisablePregnancy2.GetValueInt() as Bool) && UseESFX
 			Oviposition(actorlist[0], true)
 		endIf
 	elseif animation.hastag("Machine")
-		if stage == 3
+		if stage == 3 && UseESFX
 			if isPlayer
 				debug.notification("You are losing control...")
 			endif
 		elseif stage == 5
-			if isPlayer
+			if isPlayer && UseESFX
 				debug.notification("You begin to orgasm uncontrollably...")
 			endif
-			SexLab.ApplyCum(actorlist[0], 5)
+			mcm.SexLab.ApplyCum(actorlist[0], 5)
 		elseif stage == 8
-			DwemerExhaustion.RemoteCast(actorlist[0],actorlist[0],actorlist[0])
-			if isPlayer
+			if  UseESFX
+				DwemerExhaustion.RemoteCast(actorlist[0],actorlist[0],actorlist[0])
+			endIf
+			if isPlayer && UseESFX
 				debug.notification("The machine absorbs your sexual energy...")
 			endif
 		;elseif stage == 9
@@ -311,11 +313,11 @@ event ESAnimStage(string hookName, string argString, float argNum, form sender)
 				;stripFollower(actorlist[0])
 			;endif
 		elseif stage == 10
-			if isPlayer
+			if isPlayer && UseESFX
 				debug.notification("You have been forced to orgasm until exhausted...")
 			endif
 		elseif stage == 11
-			if isPlayer
+			if isPlayer && UseESFX
 				debug.notification("You are almost too weak to stand...")
 			endif
 		endif
@@ -354,14 +356,14 @@ endevent
 
 event ESAnimEnd(string hookName, string argString, float argNum, form sender)
 	
-	actor[] actorList = SexLab.HookActors(argString)
-	sslBaseAnimation animation = SexLab.HookAnimation(argString)
+	actor[] actorList = mcm.SexLab.HookActors(argString)
+	sslBaseAnimation animation = mcm.SexLab.HookAnimation(argString)
 	unregisterforupdate()
 	string strVictimRefid = actorList[0].getformid() as string
 	unregisterformodevent("StageEnd_" + strVictimRefid)
 	armor ESArmor = none
 	
-	int stage = SexLab.HookStage(argString)
+	int stage = mcm.SexLab.HookStage(argString)
 	
 	bool isPlayer = (actorlist[0] == PlayerRef)
 	
@@ -398,14 +400,18 @@ event ESAnimEnd(string hookName, string argString, float argNum, form sender)
 
 endevent
 
+Event Ovi(Form Sender)
+	Oviposition(Sender as Actor, true)
+EndEvent
+
 Function Oviposition(actor akVictim, bool UseParasiteSpell = true)
-	if akVictim.IsInFaction(zzEstrusSpiderBreederFaction)
+	if akVictim.IsInFaction(mcm.zzEstrusSpiderBreederFaction)
 		return
 	endIf
 	if akVictim == PlayerRef
-		if ( !akVictim.HasSpell(zzEstrusSpiderBreederAbility ) );
-			akVictim.AddSpell(zzEstrusSpiderBreederAbility , false)
-			SexLab.AdjustPlayerPurity(-5.0)
+		if ( !akVictim.HasSpell(mcm.zzEstrusSpiderBreederAbility ) );
+			akVictim.AddSpell(mcm.zzEstrusSpiderBreederAbility , false)
+			mcm.SexLab.AdjustPlayerPurity(-5.0)
 		endIf
 	else
 		If MCM.kIncubationDue.Find(akVictim, 1) < 0
@@ -507,3 +513,4 @@ function StripItem(actor akVictim, form ItemRef)
 		endif
 	endif
 endfunction
+
