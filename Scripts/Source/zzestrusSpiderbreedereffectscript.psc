@@ -233,7 +233,7 @@ state INCUBATION_NODE
 					fPregBreast = MCM.zzEstrusChaurusMaxBreastScale.GetValue()
 				endif
 
-				kTarget.SetAnimationVariableFloat("ecBreastSwell", fBreastSwell)
+				kTarget.SetAnimationVariableFloat("esBreastSwell", fBreastSwell)
 				MCM.SetNodeScaleBreast(kTarget, bIsFemale, fPregBreast, fPregBreast01)
 			elseIf ( bBreastEnabled && fPregBreast != fOrigBreast )
 				fPregBreast    = fOrigBreast
@@ -241,7 +241,7 @@ state INCUBATION_NODE
 					fPregBreast01  = fOrigBreast01
 				endIf
 				
-				kTarget.SetAnimationVariableFloat("ecBreastSwell", 0.0)
+				kTarget.SetAnimationVariableFloat("esBreastSwell", 0.0)
 				MCM.SetNodeScaleBreast(kTarget, bIsFemale, fPregBreast, fPregBreast01)
 			endif
 
@@ -267,11 +267,11 @@ state INCUBATION_NODE
 					fPregBelly = MCM.zzEstrusChaurusMaxBellyScale.GetValue()
 				endif
 
-				kTarget.SetAnimationVariableFloat("ecBellySwell", fBellySwell)
+				kTarget.SetAnimationVariableFloat("esBellySwell", fBellySwell)
 				MCM.SetNodeScaleBelly(kTarget, bIsFemale, fPregBelly)
 			elseIf ( bBellyEnabled && fPregBelly != fOrigBelly )
 				fPregBelly = fOrigBelly
-				kTarget.SetAnimationVariableFloat("ecBellySwell", 0.0)
+				kTarget.SetAnimationVariableFloat("esBellySwell", 0.0)
 				MCM.SetNodeScaleBelly(kTarget, bIsFemale, fPregBelly)
 			endif
 

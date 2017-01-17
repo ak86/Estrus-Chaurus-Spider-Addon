@@ -482,8 +482,8 @@ Function SetNodeScaleBreast(Actor akActor, bool isFemale, float value, float val
 	BodyMod.SetNodeScale(akActor, NINODE_LEFT_BREAST, value, isFemale)
 	BodyMod.SetNodeScale(akActor, NINODE_RIGHT_BREAST, value, isFemale)
 	if bTorpedoFixEnabled
-		BodyMod.SetNodeScale(akActor, NINODE_LEFT_BREAST, value01, isFemale)
-		BodyMod.SetNodeScale(akActor, NINODE_RIGHT_BREAST, value01, isFemale)
+		BodyMod.SetNodeScale(akActor, NINODE_LEFT_BREAST01, value01, isFemale)
+		BodyMod.SetNodeScale(akActor, NINODE_RIGHT_BREAST01, value01, isFemale)
 	endIf
 EndFunction
 
