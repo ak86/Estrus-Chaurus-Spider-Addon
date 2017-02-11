@@ -11,19 +11,55 @@ function RegisterForSLSpider()
 	
 	debug.notification("ES+ "+ mcm.GetStringVer() + " Registered...")
 	RegisterForModEvent("OrgasmStart", "onOrgasm")
+	RegisterForModEvent("AnimationEnd", "OnSexLabEnd")
+	RegisterForModEvent("SexLabOrgasmSeparate", "onOrgasmS")
 
 endfunction
 
 ; START ES FUNCTIONS ==========================================================
 
 ; // Our callback we registered onto the global event 
-event onOrgasm(string eventName, string argString, float argNum, form sender)
+event onOrgasmS(Form ActorRef, Int Thread)
+	actor akActor = ActorRef as actor
+	string id = Thread as string
+	
+   ; // Use the HookController() function to get the actorlist
+    actor[] actorList = mcm.SexLab.HookActors(id)
+ 
 	if mcm.zzEstrusDisablePregnancy2.GetValueInt()
     	return
     endif
 	
+	if actorList.Length > 1 && akActor != actorList[0]
+		
+		; // See if a Spider was involved
+		if actorlist.length > 1 && actorlist[1].IsInFaction(spider)
+			SpiderImpregnate(actorlist[0], actorlist[1])
+		endif
+		
+		; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
+		; // if true, impregnate victim
+		Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
+		if _SLP_ParasiteSpiderPenis != none
+			if actorlist[1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
+				if actorlist.length > 1
+					SpiderImpregnate(actorlist[0], actorlist[1])
+				endif
+			endif
+		endif
+		
+	endif
+
+endEvent
+
+; // Our callback we registered onto the global event 
+event onOrgasm(string eventName, string argString, float argNum, form sender)
     ; // Use the HookController() function to get the actorlist
     actor[] actorList = mcm.SexLab.HookActors(argString)
+ 
+	if mcm.zzEstrusDisablePregnancy2.GetValueInt()
+    	return
+    endif
 	
     ; // See if a Spider was involved
    	if actorlist.length > 1 && actorlist[1].IsInFaction(spider)
@@ -40,6 +76,22 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
 			endif
 		endif
 	endif
+
+endEvent
+
+; // Our callback we registered onto the global event 
+event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
+    ; // Use the HookController() function to get the actorlist
+    actor[] actorList = mcm.SexLab.HookActors(argString)
+ 
+	; // See if a Spider was involved, and try to fix it for SL1.62
+   	if actorlist.length > 1 && actorlist[1].IsInFaction(spider)
+		Utility.Wait(0.1)
+   		actorlist[1].disable()
+   		actorlist[1].enable()
+		;Utility.Wait(1)
+		;actorlist[1].MoveToMyEditorLocation()
+   	endif
 
 endEvent
 
