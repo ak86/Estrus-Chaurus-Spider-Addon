@@ -1,1 +1,1 @@
-# Estrus Chaurus Spider Addon
+# Estrus Chaurus - Spider Addon

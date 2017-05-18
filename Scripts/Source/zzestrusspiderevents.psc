@@ -37,6 +37,9 @@ Keyword ESpkg = None
 
 int EventFxID0 = 0
 int EventFxID1 = 0
+int iNotifyStage = 0
+
+String strCallback
 
 bool dDLoaded = false
 bool UseESFx = true
@@ -66,19 +69,26 @@ zadlibs dDlibs = None
 ;	endIf
 ;
 ; Setting the animation required to -1 applies ES breeder effect without any animation or visual effects, alarms, chastity device checks, or crowd control however ALL 6 parameters still
-; need to be passed for the modevent to function.  To use impregnation only the required parameter values are:  self, akActor, -1, False, 0, False
+; need to be passed for the modevent to function.
+;
+; To use impregnation only the required parameter values are:  self, akActor, -1, False, 0, False
+;
+;
+;
+;To register a callback to trigger on a specific stage of the next animation played use this modevent immediately BEFORE calling the ES event
+;
+;	SendModEvent("ESRegisterforStage,"MyModsCallbackName", CallbackAnimationStage as Float)
+;
+; 	**NB** Only one stage can be registered & the callback registration is cleared once the animation plays, it must therefore be sent each time you trigger the EC animation event that needs a stage callback
+;	Don't forget to Register for the callback event (e.g. RegisterForModEvent("MyModsCallbackName", "OnESStage" ) in your own mod 
 ;
 ;************************************
 ; Please do not link directly to ES functions - they are likely to change and break your mod!
-;	Impregnation event
-;	int ESOvi = ModEvent.Create("ESOvi")
-;  	ModEvent.PushForm(ESOvi, akActor)             ; Form			actor it impregnate
-;  	ModEvent.Send(ESOvi)
 
 function InitModEvents()
 
+	RegisterForModEvent("ESRegisterforStage", "OnESRegisterforStage")
 	RegisterForModEvent("ESStartAnimation", "OnESStartAnimation")
-	RegisterForModEvent("ESOvi", "Ovi")
 	
 	if !dDLoaded
 		dDlibs = Game.GetFormFromFile(0x0000F624, "Devious Devices - Integration.esm") as Zadlibs
@@ -92,6 +102,11 @@ function InitModEvents()
 	endif 
 
 endFunction
+
+Function OnESRegisterforStage(String strEventName, String strReqCB, Float fStage, Form kSender)
+	iNotifyStage = fStage as Int
+	strCallback = strReqCB
+EndFunction
 
 bool function OnESStartAnimation(Form Sender, form akTarget, int intAnim, bool bUseFX, int intUseAlarm, bool bUseCrowdControl)
 
@@ -265,6 +280,12 @@ event ESAnimStage(string hookName, string argString, float argNum, form sender)
 	sslBaseAnimation animation = mcm.SexLab.HookAnimation(argString)
 	armor ESArmor = none
 
+	if Stage == iNotifyStage && strCallback != ""
+		actorlist[0].SendModEvent(strCallback)
+		iNotifyStage = 0
+		strCallback = ""
+	endif
+
 	if animation.hastag("Tentacle") ||  animation.hastag("Slime")  ||  animation.hastag("Ooze") 
 		if stage >= 2 && stage < 9 
 			mcm.SexLab.ApplyCum(actorlist[0], 5)
@@ -400,15 +421,11 @@ event ESAnimEnd(string hookName, string argString, float argNum, form sender)
 
 endevent
 
-Event Ovi(Form Sender)
-	Oviposition(Sender as Actor, true)
-EndEvent
-
 Function Oviposition(actor akVictim, bool UseParasiteSpell = true)
-	if akVictim.IsInFaction(mcm.zzEstrusSpiderBreederFaction)
-		return
-	endIf
 	if akVictim == PlayerRef
+		if akVictim.IsInFaction(mcm.zzEstrusSpiderBreederFaction)
+			return
+		endIf
 		if ( !akVictim.HasSpell(mcm.zzEstrusSpiderBreederAbility ) );
 			akVictim.AddSpell(mcm.zzEstrusSpiderBreederAbility , false)
 			mcm.SexLab.AdjustPlayerPurity(-5.0)
@@ -418,8 +435,10 @@ Function Oviposition(actor akVictim, bool UseParasiteSpell = true)
 			Int BreederIdx = MCM.kIncubationDue.Find(none, 1)
 			if BreederIdx > 0
 				(zzEstrusSpider.GetNthAlias(BreederIdx) as ReferenceAlias).ForceRefTo(akVictim)
-				(zzEstrusSpider.GetNthAlias(BreederIdx) as zzestruschaurusaliasscript).OnBreederStart(akVictim, BreederIdx)
+				(zzEstrusSpider.GetNthAlias(BreederIdx) as zzestrusspidersaliasscript).OnBreederStart(akVictim, BreederIdx)
 			endif
+		else
+			return
 		endif
 	endif	
 	if UseParasiteSpell

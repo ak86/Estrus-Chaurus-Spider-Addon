@@ -11,7 +11,7 @@ int property TentacleSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 4230
+	return 4310
 endFunction
 
 string function GetStringVer()
@@ -253,6 +253,7 @@ state STATE_FORCE_FIX
 	event OnSelectST()
 		SetToggleOptionValueST( true )
 		If ShowMessage("$EC_UPDATE_EXIT")
+			zzestrusspider_BodyMod BodyMod = Quest.GetQuest("zzestrusspider_BodyMod") as zzestrusspider_BodyMod
 		
 			Utility.Wait( 0.1 )
 
@@ -269,22 +270,20 @@ state STATE_FORCE_FIX
 			nodes[6] = "SkirtBBone02"
 			nodes[7] = "NPC Belly"
 			
-			Actor kActor = Game.GetCurrentCrosshairRef() as Actor
+			Actor akActor = Game.GetCurrentCrosshairRef() as Actor
 		
-			If kActor == None
-				kActor = Player
+			If akActor == None
+				akActor = Player
 			Endif
-			bool bIsFemale = (kActor.GetLeveledActorBase().GetSex() == 1)
+			bool IsFemale = (akActor.GetLeveledActorBase().GetSex() == 1)
 
 			idx2 = nodes.length
 
 			While idx2 >0
 				idx2 -= 1
-				
-				XPMSELib.SetNodeScale(kActor, bIsFemale , nodes[idx2], 1.0, ES_KEY)
+				BodyMod.SetNodeScale(akActor, nodes[idx2], 1, isFemale)
 			endWhile
 
-			kActor.QueueNiNodeUpdate()
 			;SetToggleOptionValueST( false )
 		else
 			SetToggleOptionValueST( false )

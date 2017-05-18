@@ -31,23 +31,19 @@ event onOrgasmS(Form ActorRef, Int Thread)
     endif
 	
 	if actorList.Length > 1 && akActor != actorList[0]
-		
-		; // See if a Spider was involved
-		if actorlist.length > 1 && actorlist[1].IsInFaction(spider)
-			SpiderImpregnate(actorlist[0], actorlist[1])
-		endif
-		
-		; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
-		; // if true, impregnate victim
-		Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
-		if _SLP_ParasiteSpiderPenis != none
-			if actorlist[1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
-				if actorlist.length > 1
-					SpiderImpregnate(actorlist[0], actorlist[1])
+		;See if spider was involved
+		if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
+			SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+			return
+		else
+			; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
+			Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
+			if _SLP_ParasiteSpiderPenis != none
+				if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
+					SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
 				endif
 			endif
 		endif
-		
 	endif
 
 endEvent
@@ -61,18 +57,18 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
     	return
     endif
 	
-    ; // See if a Spider was involved
-   	if actorlist.length > 1 && actorlist[1].IsInFaction(spider)
-   		SpiderImpregnate(actorlist[0], actorlist[1])
-   	endif
-	
-    ; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
-    ; // if true, impregnate victim
-	Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
-	if _SLP_ParasiteSpiderPenis != none
-		if actorlist[1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
-			if actorlist.length > 1
-				SpiderImpregnate(actorlist[0], actorlist[1])
+	if actorlist.Length > 1
+		;See if spider was involved
+		if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
+			SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+			return
+		else
+			; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
+			Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
+			if _SLP_ParasiteSpiderPenis != none
+				if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
+					SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+				endif
 			endif
 		endif
 	endif
@@ -84,8 +80,8 @@ event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
     ; // Use the HookController() function to get the actorlist
     actor[] actorList = mcm.SexLab.HookActors(argString)
  
-	; // See if a Spider was involved, and try to fix it for SL1.62
-   	if actorlist.length > 1 && actorlist[1].IsInFaction(spider)
+	; // See if a Spider was involved, and try to fix broken spider animation it for SL1.62
+   	if actorlist.Length > 1 && IsSpiderRace(actorlist[1].GetRace()) == true
 		Utility.Wait(0.1)
    		actorlist[1].disable()
    		actorlist[1].enable()
@@ -94,6 +90,24 @@ event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
    	endif
 
 endEvent
+
+bool function IsSpiderRace(race akRace)
+	if akRace == (Game.GetFormFromFile(0x131F8 , "Skyrim.esm") as Race) ;FrostbiteSpiderRace
+		return true
+	elseif akRace == (Game.GetFormFromFile(0x4e507 , "Skyrim.esm") as Race) ;FrostbiteSpiderRaceGiant
+		return true
+	elseif akRace == (Game.GetFormFromFile(0x53477 , "Skyrim.esm") as Race) ;FrostbiteSpiderRaceLarge
+		return true
+	elseif Game.GetModbyName("Dragonborn.esm") != 255
+		if akRace == (Game.GetFormFromFile(0x14449 , "Dragonborn.esm") as Race) ;DLC2ExpSpiderBaseRace
+			return true
+		elseif akRace == (Game.GetFormFromFile(0x27483 , "Dragonborn.esm") as Race) ;DLC2ExpSpiderPackmuleRace
+			return true
+		endif
+	endif
+	return false
+endfunction
+
 
 function SpiderImpregnate(actor akVictim, actor akAgressor)
 
