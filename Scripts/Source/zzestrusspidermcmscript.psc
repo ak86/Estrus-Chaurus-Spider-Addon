@@ -428,12 +428,13 @@ endState
 ;moved here from ability/alias
 
 function stripActor(actor akVictim)
+	Keyword SexLabNoStrip = KeyWord.GetKeyword("SexLabNoStrip") as Keyword
 	Form ItemRef = None
 	;ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(30))
 	;StripItem(akVictim, ItemRef)
 	;ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(31))
 	;StripItem(akVictim, ItemRef)
-	ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(32))
+	ItemRef = akVictim.GetWornForm(0x00000004) ;32
 	StripItem(akVictim, ItemRef)
 	;ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(33))
 	;StripItem(akVictim, ItemRef)
@@ -443,20 +444,23 @@ function stripActor(actor akVictim)
 	;StripItem(akVictim, ItemRef)
 	;ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(38))
 	;StripItem(akVictim, ItemRef)	
-	ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(39))
+	ItemRef = akVictim.GetWornForm(0x00000200) ;39
+	StripItem(akVictim, ItemRef)
+	ItemRef = akVictim.GetWornForm(0x00020000) ;47
 	StripItem(akVictim, ItemRef)
 	ItemRef = akVictim.GetEquippedWeapon(false)
-	if ItemRef
+	if ItemRef && !ItemRef.HasKeyword(SexLabNoStrip)
 		akVictim.UnequipItemEX(ItemRef, 1, false)
 	endIf
 	ItemRef = akVictim.GetEquippedWeapon(true)
-	if ItemRef
+	if ItemRef && !ItemRef.HasKeyword(SexLabNoStrip)
 		akVictim.UnequipItemEX(ItemRef, 2, false)
 	endif
 endfunction
 
 function StripItem(actor akVictim, form ItemRef)
-	If ItemRef
+	Keyword SexLabNoStrip = KeyWord.GetKeyword("SexLabNoStrip") as Keyword
+	If ItemRef && !ItemRef.HasKeyword(SexLabNoStrip)
 		Armor akArmor = ItemRef as Armor
 		akVictim.UnequipItem(ItemRef, false, true)
 	endif

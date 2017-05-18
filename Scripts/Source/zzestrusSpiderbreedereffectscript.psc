@@ -352,13 +352,16 @@ state BIRTHING
 			iBirthingLoops = 3
 		endif
 
+
 		if bIsFemale && MCM.zzEstrusChaurusFluids.GetValue() as bool
 			;kTarget.AddItem(MCM.zzEstrusChaurusFluid, 1, true)
 			kTarget.EquipItem(MCM.zzEstrusChaurusFluid, true, true)
 			;kTarget.AddItem(zzEstrusChaurusMilkR, 1, true)
-			kTarget.EquipItem(MCM.zzEstrusChaurusRMilk, true, true)
-			;kTarget.AddItem(zzEstrusChaurusMilkL, 1, true)
-			kTarget.EquipItem(MCM.zzEstrusChaurusLMilk, true, true)
+			If !kTarget.WornHasKeyword(KeyWord.GetKeyword("zad_DeviousBra") as Keyword) && !kTarget.GetWornForm(0x00000004)
+				kTarget.EquipItem(MCM.zzEstrusChaurusRMilk, true, true)
+				;kTarget.AddItem(zzEstrusChaurusMilkL, 1, true)
+				kTarget.EquipItem(MCM.zzEstrusChaurusLMilk, true, true)
+			Endif
 		endIf
 		
 		if ( MCM.zzEstrusChaurusResidual.GetValueInt() == 1 )
