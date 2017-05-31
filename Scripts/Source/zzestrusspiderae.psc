@@ -61,7 +61,6 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
 		;See if spider was involved
 		if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
 			SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
-			return
 		else
 			; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
 			Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
@@ -72,7 +71,6 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
 			endif
 		endif
 	endif
-
 endEvent
 
 ; // Our callback we registered onto the global event 
@@ -80,15 +78,16 @@ event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
     ; // Use the HookController() function to get the actorlist
     actor[] actorList = mcm.SexLab.HookActors(argString)
  
-	; // See if a Spider was involved, and try to fix broken spider animation it for SL1.62
-   	if actorlist.Length > 1 && IsSpiderRace(actorlist[1].GetRace()) == true
-		Utility.Wait(0.1)
-   		actorlist[1].disable()
-   		actorlist[1].enable()
-		;Utility.Wait(1)
-		;actorlist[1].MoveToMyEditorLocation()
+	; // See if a Creature was involved, and try to fix broken spider animation it for SL1.62
+   	if actorlist.Length > 1 
+		if actorlist[actorlist.Length - 1].GetLeveledActorBase().GetSex() >= 2
+			Utility.Wait(0.1)
+			actorlist[actorlist.Length - 1].disable()
+			actorlist[actorlist.Length - 1].enable()
+			;Utility.Wait(1)
+			;actorlist[1].MoveToMyEditorLocation()
+		endif
    	endif
-
 endEvent
 
 bool function IsSpiderRace(race akRace)
