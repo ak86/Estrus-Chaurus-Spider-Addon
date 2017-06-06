@@ -80,7 +80,7 @@ event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
  
 	; // See if a Creature was involved, and try to fix broken spider animation it for SL1.62
    	if actorlist.Length > 1 
-		if actorlist[actorlist.Length - 1].GetLeveledActorBase().GetSex() >= 2
+		if IsSpiderRace(actorlist[actorlist.Length - 1].GetRace())
 			Utility.Wait(0.1)
 			actorlist[actorlist.Length - 1].disable()
 			actorlist[actorlist.Length - 1].enable()
