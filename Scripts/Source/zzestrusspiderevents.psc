@@ -215,6 +215,19 @@ function DoESAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 		akVictim.StopCombat()
 	
 		if mcm.SexLab.StartSex(sexActors, animations, akVictim, none, false, strVictimRefid) > -1
+			if !zzestruschaurusVictims.IsRunning()
+				zzestruschaurusVictims.start()
+				utility.wait(0.5)
+			endif
+			int VictimRefs = zzestruschaurusVictims.GetNumAliases()
+			while VictimRefs > 0
+				VictimRefs -= 1
+				If (zzestruschaurusVictims.GetNthAlias(VictimRefs)  as ReferenceAlias).ForceRefIfEmpty(akVictim)
+					(zzestruschaurusVictims.GetNthAlias(VictimRefs)  as ReferenceAlias).RegisterForSingleUpdate(5)
+					VictimRefs = 0
+				endif
+			endwhile
+
 			if isplayer && UseCrowdControl
 				zzestruschaurusSpectators.start()
 				OnUpdate()
