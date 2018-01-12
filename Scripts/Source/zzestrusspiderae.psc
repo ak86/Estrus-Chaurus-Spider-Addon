@@ -135,7 +135,7 @@ function SpiderSpitAttack(Actor akVictim, Actor akAgressor)
 	if mcm.TentacleSpitEnabled
 		if utility.randomint(1,100) <= mcm.TentacleSpitChance
 			
-			if ESEvents.OnESStartAnimation(self, akVictim, 0, true, 0, true)
+			if ESevents.OnESStartAnimation(self, akVictim, 0, true, 0, true)
 				if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
 					akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
 				endif
