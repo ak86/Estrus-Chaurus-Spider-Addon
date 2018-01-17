@@ -141,6 +141,22 @@ function SpiderSpitAttack(Actor akVictim, Actor akAgressor)
 				endif
 			endIf
 		endIf
+	elseif mcm.ParalyzeSpitEnabled
+		if utility.randomint(1,100) <= mcm.ParalyzeSpitChance
+			
+			Spell paralyzeSpell = (Game.GetFormFromFile(0x52DE4 , "EstrusSpider.esp") as Spell)
+            if paralyzeSpell
+                paralyzeSpell.cast(akAgressor,akVictim)
+                Utility.wait(2.0)
+                akVictim.dispelSpell(paralyzeSpell)
+            endif
+            
+			if ESevents.OnESStartAnimation_xjAlt(self, akVictim, akAgressor)
+				if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
+					akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
+				endif
+			endIf
+		endIf
 	endif
 	
 endfunction

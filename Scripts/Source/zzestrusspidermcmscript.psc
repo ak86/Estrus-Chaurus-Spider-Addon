@@ -4,9 +4,13 @@ Scriptname zzEstrusSpiderMCMScript extends SKI_ConfigBase  Conditional
 
 int TentacleSpitEnabledOID
 int TentacleSpitChanceOID
+int ParalyzeSpitEnabledOID
+int ParalyzeSpitChanceOID
 
 bool property TentacleSpitEnabled = false auto
+bool property ParalyzeSpitEnabled = true auto
 int property TentacleSpitChance = 20 auto
+int property ParalyzeSpitChance = 20 auto
 
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
@@ -140,14 +144,11 @@ event OnPageReset(string a_page)
 
 		SetCursorPosition(0)
 ; EVENTS ------------------------------------------------------------------------------------
-		AddHeaderOption("Events")
-		TentacleSpitEnabledOID = AddToggleOption("Spider spit effect", TentacleSpitEnabled)
-		if TentacleSpitEnabled
-			TentacleSpitChanceOID = addslideroption("Tentacle attack chance:", TentacleSpitChance, "{0} %")
-		else
-			TentacleSpitChance = 0
-			TentacleSpitChanceOID = addslideroption("Tentacle attack chance:", TentacleSpitChance, "{0} %", OPTION_FLAG_DISABLED)
-		endif
+		AddHeaderOption("Spider spit effect")
+		TentacleSpitEnabledOID = AddToggleOption("Tentacle", TentacleSpitEnabled)
+		ParalyzeSpitEnabledOID = AddToggleOption("Paralyze", ParalyzeSpitEnabled)
+		TentacleSpitChanceOID = addslideroption("Tentacle attack chance:", TentacleSpitChance, "{0} %")
+		ParalyzeSpitChanceOID = addslideroption("Paralyze chance:", ParalyzeSpitChance, "{0} %")
 ; PREGNANCY ---------------------------------------------------------------------------------------
 		AddHeaderOption("$ES_PREGNANCY_TITLE")
 		AddToggleOptionST("STATE_PREGNANCY", "$ES_PREGNANCY", bPregnancyEnabled, iOptionFlag)
@@ -201,19 +202,32 @@ event OnOptionSelect(int option)
         TentacleSpitEnabled = !TentacleSpitEnabled
         SetToggleOptionValue(TentacleSpitEnabledOID, TentacleSpitEnabled)
 	endif
+	if (option == ParalyzeSpitEnabledOID)
+        ParalyzeSpitEnabled = !ParalyzeSpitEnabled
+        SetToggleOptionValue(ParalyzeSpitEnabledOID, ParalyzeSpitEnabled)
+	endif
 endevent
 
 event OnOptionHighlight(int option)
     if (option == TentacleSpitEnabledOID)
-        SetInfoText("Enables Tentacle attacks when hit by Spider spit.\nDefault: true")
+        SetInfoText("Enables Tentacle attacks when hit by Spider spit.\nDefault: false")
     elseif (option == TentacleSpitChanceOID)
 		SetInfoText("Chance that being hit by Spider spit will start a Tentacle attack.\nDefault: 20")
+    elseif (option == ParalyzeSpitEnabledOID)
+       SetInfoText("Enables Paralyze when hit by Spider spit.\nDefault: true")
+    elseif (option == ParalyzeSpitChanceOID)
+		SetInfoText("Chance that being hit by Spider spit will Paralyze actor.\nDefault: 20")
     endif
 endevent
 
 Event OnOptionSliderOpen(int opt)
 	if opt == TentacleSpitChanceOID
 		SetSliderDialogStartValue(TentacleSpitChance)
+		SetSliderDialogDefaultValue(20)
+		SetSliderDialogRange(1, 100)
+		SetSliderDialogInterval(1)
+	elseif opt == ParalyzeSpitChanceOID
+		SetSliderDialogStartValue(ParalyzeSpitChance)
 		SetSliderDialogDefaultValue(20)
 		SetSliderDialogRange(1, 100)
 		SetSliderDialogInterval(1)
@@ -224,6 +238,9 @@ Event OnOptionSliderAccept(int opt, float val)
 	if opt == TentacleSpitChanceOID
 		TentacleSpitChance = val as int
 		SetSliderOptionValue(opt, TentacleSpitChance, "{0} %")
+	elseif opt == ParalyzeSpitChanceOID
+		ParalyzeSpitChance = val as int
+		SetSliderOptionValue(opt, ParalyzeSpitChance, "{0} %")
 	endif
 endevent
 

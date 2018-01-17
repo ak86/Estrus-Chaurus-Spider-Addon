@@ -108,6 +108,34 @@ Function OnESRegisterforStage(String strEventName, String strReqCB, Float fStage
 	strCallback = strReqCB
 EndFunction
 
+
+bool function OnESStartAnimation_xjAlt(Form Sender, actor akVictim, actor akAggressor)
+    ;debug.Notification("Xj - spit start")
+    
+	actor akActor  = akVictim
+	Bool bGenderOk = mcm.zzEstrusChaurusGender.GetValueInt() == 2 || akActor.GetLeveledActorBase().GetSex() == mcm.zzEstrusChaurusGender.GetValueInt()
+	Bool invalidateVictim = !bGenderOk || akActor.IsInFaction(zzEstrusSpiderExclusionFaction) || akActor.IsBleedingOut() || akActor.isDead()
+
+	if invalidateVictim 
+        return false
+    endif
+    int SexlabValidation = mcm.SexLab.ValidateActor(akActor)
+    if SexlabValidation != 1
+        return false
+    endif
+            
+    sexActors    = new actor[2]
+    sexActors[0] = akVictim
+    sexActors[1] = akAggressor
+    animations   = mcm.SexLab.PickAnimationsByActors(sexActors,Aggressive=True)
+	
+    if mcm.SexLab.StartSex(sexActors, animations, akVictim, AllowBed=False) != -1
+        return true
+    else
+        return false
+    endif	
+endfunction
+
 bool function OnESStartAnimation(Form Sender, form akTarget, int intAnim, bool bUseFX, int intUseAlarm, bool bUseCrowdControl)
 
 	actor akActor  = akTarget as Actor
