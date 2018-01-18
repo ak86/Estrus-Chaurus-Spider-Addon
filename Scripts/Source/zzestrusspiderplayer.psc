@@ -3,14 +3,8 @@ Scriptname zzEstrusSpiderPlayer extends ReferenceAlias
 event OnPlayerLoadGame()
 	Quest me = self.GetOwningQuest()
 
-	( me as zzEstrusSpiderMCMScript ).registerMenus()
-	( me as zzEstrusSpiderevents ).InitModEvents()
-endEvent
+	( me as zzEstrusSpiderMCMScript ).registerMenus()	;start/restart mcm on saveload
+	( me as zzEstrusSpiderevents ).InitModEvents()		;register tentacle anims/event
+	( me as zzEstrusSpiderAE ).RegisterForSLSpider()	;register sexlab anims/event
 
-event OnCellLoad()
-	Quest me = self.GetOwningQuest()
-
-	if ( me as zzEstrusSpiderMCMScript ).bRegisterCompanions
-		( me as zzEstrusSpiderAE ).AddCompanions()
-	endIf
 endEvent

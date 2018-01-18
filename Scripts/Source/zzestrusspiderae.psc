@@ -1,172 +1,111 @@
 Scriptname zzEstrusSpiderAE extends Quest
 
-; VERSION 1
-sslSystemConfig           property SexLabMCM                        auto
-SexLabFramework           property SexLab                           auto
-Faction                   property Spider                          auto
-Faction                   property SexLabAnimating                  auto
-Spell                     property zzSpiderParasite                auto 
-MagicEffect[]             property crSpiderPoison                  auto 
-Armor                     property zzEstrusSpiderParasite          auto  
-Armor                     property zzEstrusChaurusFluid             auto  
-GlobalVariable            property zzEstrusChaurusFluids            auto  
+Faction                   property Spider                           auto
+Spell                     property zzSpiderParasite                 auto 
+Faction                   property zzEstrusSpiderExclusionFaction   auto
 
-; VERSION 2
-Spell                     property zzEstrusSpiderBreederAbility    auto
-Faction                   property zzEstrusSpiderBreederFaction    auto
-
-; VERSION 3
-Faction                   property CurrentFollowerFaction           auto
-Keyword                   property ActorTypeNPC                     auto
-
-; VERSION 5
-zzEstrusSpiderMCMScript  property mcm                              auto 
-
-; VERSION 6
-Faction                   property CurrentHireling                  auto
-
-; VERSION 8
-Armor                     property zzEstrusSpiderDwemerBinders     auto
-
-
-; VERSION 11
-Faction                   property zzEstrusSpiderExclusionFaction  auto
-
-
-;Version 12 AE Removal
-Actor[] 				  Property myActorsList  					Auto
-
-;Version 13
-
-;zadlibs dDlibs = None
-;bool dDLoaded = false
-
-sound 					 Property zzEstrusTentacleFX				Auto
-
-; VERSION 14 - ES+ 3.382
-;Actor[]            sexActors *Deprecated*
-;sslBaseAnimation[] animations *Deprecated*
-;int FxID0 = 0 *Deprecated*
-;int FXID1 = 0 *Deprecated*
-; VERSION 15 - ES+ 3.383
-zzestrusspiderevents  property ESevents                            Auto 
-
-; START AE VERSIONING =========================================================
-; This functions exactly as and has the same purpose as the SkyUI function
-; GetVersion(). It returns the static version of the AE script.
-int function aeGetVersion()
-	return 11
-endFunction
-
-function aeUpdate( int aiVersion )
-	
-	int myVersion = 11 
-
-	if (myVersion >= 2 && aiVersion < 2)
-		zzEstrusSpiderBreederAbility = Game.GetFormFromFile(0x0004e255, "EstrusSpider.esp") as Spell
-		zzEstrusSpiderBreederFaction = Game.GetFormFromFile(0x0004e258, "EstrusSpider.esp") as Faction
-	endIf
-	if (myVersion >= 3 && aiVersion < 3)
-		myActorsList = New Actor[10]
-		myActorsList[0] = Game.GetPlayer()
-
-		CurrentFollowerFaction = Game.GetFormFromFile(0x0005c84e, "Skyrim.esm") as Faction
-		ActorTypeNPC = Game.GetFormFromFile(0x00013794, "Skyrim.esm") as Keyword
-	endIf
-	if (myVersion >= 4 && aiVersion < 4)
-		myActorsList = New Actor[20]
-		myActorsList[0] = Game.GetPlayer()
-	endIf
-	if (myVersion >= 5 && aiVersion < 5)	
-		mcm = ( self as quest ) as zzEstrusSpiderMCMScript
-	endIf
-	if (myVersion >= 6 && aiVersion < 6)
-		CurrentHireling = Game.GetFormFromFile(0x000bd738, "Skyrim.esm") as Faction
-	endIf
-	if (myVersion >= 7 && aiVersion < 7)
-		myActorsList = New Actor[20]
-
-		int idx = myActorsList.length
-		while idx > 1
-			idx -= 1
-			myActorsList[idx] = none
-		endWhile
-
-		myActorsList[0] = Game.GetPlayer()
-	endIf
-	if (myVersion >= 10 && aiVersion < 10)
-		zzEstrusSpiderDwemerBinders = Game.GetFormFromFile(0x0004e267, "EstrusSpider.esp") as Armor
-	endIf
-	if (myVersion >= 11 && aiVersion < 11)
-		zzEstrusSpiderExclusionFaction = Game.GetFormFromFile(0x0004e265, "EstrusSpider.esp") as Faction
-	endIf
-
-endFunction
+zzEstrusSpiderMCMScript   property mcm                              auto 
+zzestrusspiderevents 	  property ESevents                         auto 
 
 function RegisterForSLSpider()
 	
 	debug.notification("ES+ "+ mcm.GetStringVer() + " Registered...")
 	RegisterForModEvent("OrgasmStart", "onOrgasm")
+	RegisterForModEvent("AnimationEnd", "OnSexLabEnd")
+	RegisterForModEvent("SexLabOrgasmSeparate", "onOrgasmS")
 
 endfunction
 
 ; START ES FUNCTIONS ==========================================================
-int function AddCompanions()
-	myActorsList[0] = Game.GetPlayer()
 
-	Actor thisActor = none
-	Int   thisCount = 0
-	Cell  thisCell  = myActorsList[0].GetParentCell()
-	Int   idxNPC    = thisCell.GetNumRefs(43)
+; // Our callback we registered onto the global event 
+event onOrgasmS(Form ActorRef, Int Thread)
+	actor akActor = ActorRef as actor
+	string id = Thread as string
 	
-	Bool  check1    = false
-	Bool  check2    = false
-	Bool  check3    = false
+   ; // Use the HookController() function to get the actorlist
+    actor[] actorList = mcm.SexLab.HookActors(id)
+ 
+	if mcm.zzEstrusDisablePregnancy2.GetValueInt()
+    	return
+    endif
 	
-	Debug.TraceConditional("$ES_COMPANIONS_CHECK", true)
-	
-	while idxNPC > 0 && thisCount < 19
-		idxNPC -= 1
-		thisActor = thisCell.GetNthRef(idxNPC,43) as Actor
-		
-		check1 = thisActor && !thisActor.IsDead() && !thisActor.IsDisabled()
-		check2 = check1 && myActorsList.Find(thisActor) < 0 && thisActor.HasKeyword(ActorTypeNPC)
-		check3 = check2 && ( thisActor.GetFactionRank(CurrentHireling) >= 0 || thisActor.GetFactionRank(CurrentFollowerFaction) >= 0 || thisActor.IsPlayerTeammate() )
-
-		if check3
-			thisCount += 1
-			myActorsList[thisCount] = thisActor
-			Debug.TraceConditional("ES::AddCompanions: " + thisActor.GetLeveledActorBase().GetName() + "@"+thisCount, true) ;ae.VERBOSE)
+	if actorList.Length > 1 && akActor != actorList[0]
+		;See if spider was involved
+		if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
+			SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+			return
 		else
-			Debug.TraceConditional("ES::AddCompanions: " + thisActor.GetLeveledActorBase().GetName() + ":false", true) ;ae.VERBOSE)
+			; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
+			Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
+			if _SLP_ParasiteSpiderPenis != none
+				if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
+					SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+				endif
+			endif
 		endif
-	endWhile
-	
-	return thisCount
-endFunction
+	endif
 
-function RemoveCompanions()
-	Int idxNPC = myActorsList.length
-	while idxNPC > 1
-		idxNPC -= 1
-		myActorsList[idxNPC] = none
-	endWhile
-endFunction
-
+endEvent
 
 ; // Our callback we registered onto the global event 
 event onOrgasm(string eventName, string argString, float argNum, form sender)
+    ; // Use the HookController() function to get the actorlist
+    actor[] actorList = mcm.SexLab.HookActors(argString)
+ 
 	if mcm.zzEstrusDisablePregnancy2.GetValueInt()
     	return
-    endif	
-    ; // Use the HookController() function to get the actorlist
-    actor[] actorList = SexLab.HookActors(argString)
-    ; // See if a Spider was involved
-   	if actorlist.length > 1 && actorlist[1].IsInFaction(spider)
-   		SpiderImpregnate(actorlist[0], actorlist[1])
-   	endif
-
+    endif
+	
+	if actorlist.Length > 1
+		;See if spider was involved
+		if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
+			SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+		else
+			; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
+			Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
+			if _SLP_ParasiteSpiderPenis != none
+				if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
+					SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+				endif
+			endif
+		endif
+	endif
 endEvent
+
+; // Our callback we registered onto the global event 
+event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
+    ; // Use the HookController() function to get the actorlist
+    actor[] actorList = mcm.SexLab.HookActors(argString)
+ 
+	; // See if a Creature was involved, and try to fix broken spider animation it for SL1.62
+   	if actorlist.Length > 1 
+		if IsSpiderRace(actorlist[actorlist.Length - 1].GetRace())
+			Utility.Wait(0.1)
+			actorlist[actorlist.Length - 1].disable()
+			actorlist[actorlist.Length - 1].enable()
+			;Utility.Wait(1)
+			;actorlist[1].MoveToMyEditorLocation()
+		endif
+   	endif
+endEvent
+
+bool function IsSpiderRace(race akRace)
+	if akRace == (Game.GetFormFromFile(0x131F8 , "Skyrim.esm") as Race) ;FrostbiteSpiderRace
+		return true
+	elseif akRace == (Game.GetFormFromFile(0x4e507 , "Skyrim.esm") as Race) ;FrostbiteSpiderRaceGiant
+		return true
+	elseif akRace == (Game.GetFormFromFile(0x53477 , "Skyrim.esm") as Race) ;FrostbiteSpiderRaceLarge
+		return true
+	elseif Game.GetModbyName("Dragonborn.esm") != 255
+		if akRace == (Game.GetFormFromFile(0x14449 , "Dragonborn.esm") as Race) ;DLC2ExpSpiderBaseRace
+			return true
+		elseif akRace == (Game.GetFormFromFile(0x27483 , "Dragonborn.esm") as Race) ;DLC2ExpSpiderPackmuleRace
+			return true
+		endif
+	endif
+	return false
+endfunction
 
 
 function SpiderImpregnate(actor akVictim, actor akAgressor)
@@ -180,13 +119,13 @@ function SpiderImpregnate(actor akVictim, actor akAgressor)
 
 	ESevents.Oviposition(akvictim)
 
-	if ( !akAgressor.IsInFaction(zzEstrusSpiderBreederFaction) )
-		akAgressor.AddToFaction(zzEstrusSpiderBreederFaction)
+	if ( !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) )
+		akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
 	endIf
 	
-	SexLab.ApplyCum(akvictim, 7)
+	mcm.SexLab.ApplyCum(akvictim, 7)
 	
-	utility.wait(5) ; Allow time for ES to register oviposition
+	utility.wait(5) ; Allow time for ES to register oviposition and crowd control to kick in
 	akVictim.DispelSpell(zzSpiderParasite)
 
 endfunction
@@ -196,10 +135,25 @@ function SpiderSpitAttack(Actor akVictim, Actor akAgressor)
 	if mcm.TentacleSpitEnabled
 		if utility.randomint(1,100) <= mcm.TentacleSpitChance
 			
-			if ESEvents.OnESStartAnimation(self, akVictim, 0, true, 0, true)
-				if !akAgressor.IsInFaction(zzEstrusSpiderBreederFaction) 
-					;ESEvents.OnESStartAnimation(self, akVictim, 0, true, 0, true)
-					akAgressor.AddToFaction(zzEstrusSpiderBreederFaction)
+			if ESevents.OnESStartAnimation(self, akVictim, 0, true, 0, true)
+				if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
+					akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
+				endif
+			endIf
+		endIf
+	elseif mcm.ParalyzeSpitEnabled
+		if utility.randomint(1,100) <= mcm.ParalyzeSpitChance
+			
+			Spell paralyzeSpell = (Game.GetFormFromFile(0x52DE4 , "EstrusSpider.esp") as Spell)
+            if paralyzeSpell
+                paralyzeSpell.cast(akAgressor,akVictim)
+                Utility.wait(2.0)
+                akVictim.dispelSpell(paralyzeSpell)
+            endif
+            
+			if ESevents.OnESStartAnimation_xjAlt(self, akVictim, akAgressor)
+				if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
+					akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
 				endif
 			endIf
 		endIf
