@@ -8,9 +8,8 @@ sslBaseAnimation[] animations
 
 actor Property PlayerRef Auto
 
-faction property ESTentaclefaction Auto
-faction property ESVictimfaction Auto
-faction property zzEstrusSpiderExclusionFaction  auto
+faction property ECTentaclefaction Auto
+faction property ECVictimfaction Auto
 faction property CurrentFollowerFaction auto
 
 armor  property zzEstrusSpiderDwemerBinders  auto
@@ -41,10 +40,7 @@ int iNotifyStage = 0
 
 String strCallback
 
-bool dDLoaded = false
 bool UseESFx = true
-
-zadlibs dDlibs = None
 
 
 ;************************************
@@ -90,17 +86,6 @@ function InitModEvents()
 	RegisterForModEvent("ESRegisterforStage", "OnESRegisterforStage")
 	RegisterForModEvent("ESStartAnimation", "OnESStartAnimation")
 	
-	if Keyword.GetKeyword("zad_deviousBelt") as Keyword && !dDLoaded
-		dDlibs = Game.GetFormFromFile(0xF624, "Devious Devices - Integration.esm") as Zadlibs
-		if dDlibs != None
-			debug.trace("_ES_::Loaded dD Integration")
-			dDLoaded = true
-		else
-			debug.trace("_ES_::Devious Devices - Integration.esm not found - Devices will not be supported")
-			dDLoaded = false
-		endif
-	endif 
-
 endFunction
 
 Function OnESRegisterforStage(String strEventName, String strReqCB, Float fStage, Form kSender)
@@ -114,7 +99,7 @@ bool function OnESStartAnimation_xjAlt(Form Sender, actor akVictim, actor akAggr
     
 	actor akActor  = akVictim
 	Bool bGenderOk = mcm.zzEstrusChaurusGender.GetValueInt() == 2 || akActor.GetLeveledActorBase().GetSex() == mcm.zzEstrusChaurusGender.GetValueInt()
-	Bool invalidateVictim = !bGenderOk || akActor.IsInFaction(zzEstrusSpiderExclusionFaction) || akActor.IsBleedingOut() || akActor.isDead()
+	Bool invalidateVictim = !bGenderOk || akActor.IsBleedingOut() || akActor.isDead()
 
 	if invalidateVictim 
         return false
@@ -140,7 +125,7 @@ bool function OnESStartAnimation(Form Sender, form akTarget, int intAnim, bool b
 
 	actor akActor  = akTarget as Actor
 	Bool bGenderOk = mcm.zzEstrusChaurusGender.GetValueInt() == 2 || akActor.GetLeveledActorBase().GetSex() == mcm.zzEstrusChaurusGender.GetValueInt()
-	Bool invalidateVictim = !bGenderOk || akActor.IsInFaction(zzEstrusSpiderExclusionFaction) || akActor.IsBleedingOut() || akActor.isDead()
+	Bool invalidateVictim = !bGenderOk || akActor.IsBleedingOut() || akActor.isDead()
 
 	if !invalidateVictim 
 		int SexlabValidation = mcm.SexLab.ValidateActor(akActor)
@@ -189,45 +174,10 @@ function DoESAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 				utility.wait(1)
 			endif
 		endif
-
-		armor dDArmbinder = none
-
-		if dDLoaded
-
-			dDArmbinder = dDlibs.GetWornDeviceFuzzyMatch(akVictim, dDlibs.zad_DeviousArmbinder) 
-
-			if akVictim.WornHasKeyword(dDlibs.zad_DeviousBelt) || ( akVictim.WornHasKeyword(dDlibs.zad_DeviousHeavyBondage) && !dDArmbinder) || (dDArmbinder && dDArmbinder.HasKeyword(dDlibs.zad_BlockGeneric))
-				if isPlayer
-					if EstrusID == 1 
-						debug.notification("A red dot scans over your devious devices and vanishes...")
-					else
-						debug.notification("Something nasty was warded away by your devious aura...")
-					endIf
-						if UseAlarm
-							akvictim.CreateDetectionEvent(akVictim, UseAlarm)
-						endif
-					return
-				endif
-			endif
-		endif
-
-		If dDArmbinder
-			dDlibs.ManipulateGenericDevice(akVictim, dDArmbinder, false)
-			utility.wait(1)
-			If !akVictim.GetWornForm(0x00010000) as Armor
-				if isPlayer
-					debug.notification("'Something' behind you deftly stripped off your armbinder...")					
-				endIf
-				akVictim.DropObject(dDArmbinder, 1)
-			Else
-				debug.notification("Something nasty was warded away by your devious aura...")
-				if UseAlarm
-					akvictim.CreateDetectionEvent(akVictim, UseAlarm)
-				endif 
-				return
-			Endif
-		Endif
-
+		
+		zzestrusspider_DDI DDI = Quest.GetQuest("zzestrusspider_DDI") as zzestrusspider_DDI
+		DDI.ddi_check(akVictim, EstrusID, UseAlarm)
+		
 		if isplayer
 			SendModEvent("dhlp-Suspend") ;ES Scene starting - suspend Deviously Helpless Events
 		endif 
@@ -507,13 +457,13 @@ Event OnUpdate()
 	While (NumRefs > 0)
 		NumRefs -= 1
 		akactor = c.GetNthRef(NumRefs, 43) as Actor
-		if akactor.IsInFaction(ESVictimfaction)
+		if akactor.IsInFaction(ECVictimfaction)
 			FoundVictim = true
 		Endif
 		actor aktarget = akactor.GetCombatTarget()
 		If aktarget != none  && !akactor.IsInFaction(CurrentFollowerFaction) && akactor.HasLOS(aktarget)
-			if aktarget.IsInFaction(ESVictimfaction) 
-				if ( !akactor.IsInFaction(ESTentaclefaction) )
+			if aktarget.IsInFaction(ECVictimfaction) 
+				if ( !akactor.IsInFaction(ECTentaclefaction) )
 					int SpectatorRefs = zzestruschaurusSpectators.GetNumAliases()
 						while SpectatorRefs > 1
 							SpectatorRefs -= 1

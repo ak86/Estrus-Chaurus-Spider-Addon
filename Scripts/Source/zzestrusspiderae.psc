@@ -2,7 +2,6 @@ Scriptname zzEstrusSpiderAE extends Quest
 
 Faction                   property Spider                           auto
 Spell                     property zzSpiderParasite                 auto 
-Faction                   property zzEstrusSpiderExclusionFaction   auto
 
 zzEstrusSpiderMCMScript   property mcm                              auto 
 zzestrusspiderevents 	  property ESevents                         auto 
@@ -111,7 +110,7 @@ endfunction
 function SpiderImpregnate(actor akVictim, actor akAgressor)
 
 	Bool bGenderOk = mcm.zzEstrusChaurusGender.GetValueInt() == 2 || akvictim.GetLeveledActorBase().GetSex() == mcm.zzEstrusChaurusGender.GetValueInt()
-	Bool invalidateVictim = !bGenderOk || ( akVictim.IsInFaction(zzEstrusSpiderExclusionFaction) || akVictim.IsBleedingOut() || akVictim.isDead() )
+	Bool invalidateVictim = !bGenderOk || ( akVictim.IsBleedingOut() || akVictim.isDead() )
 
 	if invalidateVictim
 		return
@@ -149,7 +148,8 @@ function SpiderSpitAttack(Actor akVictim, Actor akAgressor)
                 paralyzeSpell.cast(akAgressor,akVictim)
                 Utility.wait(2.0)
                 akVictim.dispelSpell(paralyzeSpell)
-            endif
+                Utility.wait(1.0)
+           endif
             
 			if ESevents.OnESStartAnimation_xjAlt(self, akVictim, akAgressor)
 				if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
