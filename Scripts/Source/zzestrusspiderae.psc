@@ -1,6 +1,5 @@
 Scriptname zzEstrusSpiderAE extends Quest
 
-Faction                   property Spider                           auto
 Spell                     property zzSpiderParasite                 auto 
 
 zzEstrusSpiderMCMScript   property mcm                              auto 
@@ -20,27 +19,28 @@ endfunction
 ; // Our callback we registered onto the global event 
 event onOrgasmS(Form ActorRef, Int Thread)
 	actor akActor = ActorRef as actor
-	string id = Thread as string
 	
    ; // Use the HookController() function to get the actorlist
-    actor[] actorList = mcm.SexLab.HookActors(id)
+    actor[] actorList = mcm.SexLab.HookActors(Thread as string)
+	sslThreadController controller = mcm.Sexlab.GetController(Thread)
  
 	if mcm.zzEstrusDisablePregnancy2.GetValueInt()
     	return
     endif
 	
 	if actorList.Length > 1 && akActor != actorList[0]
+		; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
+		Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
+		if _SLP_ParasiteSpiderPenis != none
+			if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis) && controller.IsVaginal
+				SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+				return
+			endif
+		endif
 		;See if spider was involved
-		if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
-			SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
-			return
-		else
-			; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
-			Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
-			if _SLP_ParasiteSpiderPenis != none
-				if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
-					SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
-				endif
+		if mcm.Sexlab.PregnancyRisk(Thread, actorlist[0], false, true)
+			if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
+				SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
 			endif
 		endif
 	endif
@@ -51,22 +51,25 @@ endEvent
 event onOrgasm(string eventName, string argString, float argNum, form sender)
     ; // Use the HookController() function to get the actorlist
     actor[] actorList = mcm.SexLab.HookActors(argString)
- 
+ 	sslThreadController controller = mcm.Sexlab.GetController(argString as Int)
+
 	if mcm.zzEstrusDisablePregnancy2.GetValueInt()
     	return
     endif
 	
 	if actorlist.Length > 1
+		; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
+		Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
+		if _SLP_ParasiteSpiderPenis != none
+			if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis) && controller.IsVaginal
+				SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+				return
+			endif
+		endif
 		;See if spider was involved
-		if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
-			SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
-		else
-			; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
-			Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
-			if _SLP_ParasiteSpiderPenis != none
-				if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis)
-					SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
-				endif
+		if mcm.Sexlab.PregnancyRisk(argString as Int, actorlist[0], false, true)
+			if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
+				SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
 			endif
 		endif
 	endif

@@ -1,17 +1,15 @@
 ﻿<fomod>
   <Name>Estrus Chaurus Spider Addon</Name>
-  <Version>v4.33-4</Version>
+  <Version>v4.34</Version>
   <Author>Ed86</Author>
   <Description>
   Requirements:
-  Estrus Chaurus+ v4.33 and its prerequisites http://www.loverslab.com/files/file/1033-estrus-chaurus/
+  Estrus Chaurus+ v4.34 and its prerequisites http://www.loverslab.com/files/file/1033-estrus-chaurus/
   
  
  This is a port of http://www.loverslab.com/files/file/1938-estrus-chaurus-v394-spider-addon/
  It's not a replacer but an addon, so it is compatible with EC+ v4.33 and, maybe, future versions.
  
- This mod changes breeder effect of EstrusChaurus.esp by adding HasSpell check it so that you can only get pregnant by either a spider or a chaurus at a time.
-
  
  </Description>
   <Website>http://www.loverslab.com/files/file/2438-estrus-chaurus-spider-addon/</Website>

@@ -15,7 +15,7 @@ int property ParalyzeSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 4330
+	return 4334
 endFunction
 
 string function GetStringVer()
