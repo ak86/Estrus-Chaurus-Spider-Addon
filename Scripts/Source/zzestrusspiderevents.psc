@@ -102,7 +102,7 @@ bool function OnESStartAnimation_xjAlt(Form Sender, actor akVictim, actor akAggr
 	Bool invalidateVictim = !bGenderOk || akActor.IsBleedingOut() || akActor.isDead()
 
 	if invalidateVictim 
-        return false
+		return false
     endif
     int SexlabValidation = mcm.SexLab.ValidateActor(akActor)
     if SexlabValidation != 1
@@ -114,10 +114,26 @@ bool function OnESStartAnimation_xjAlt(Form Sender, actor akVictim, actor akAggr
     sexActors[1] = akAggressor
     animations   = mcm.SexLab.PickAnimationsByActors(sexActors,Aggressive=True)
 	
+	
+    ;if mcm.SexLab.QuickStart(akVictim, akAggressor, none, none, none, akVictim)
     if mcm.SexLab.StartSex(sexActors, animations, akVictim, AllowBed=False) != -1
-        return true
+		if !zzestruschaurusVictims.IsRunning()
+			zzestruschaurusVictims.start()
+			utility.wait(0.5)
+		endif
+		int VictimRefs = zzestruschaurusVictims.GetNumAliases()
+		while VictimRefs > 0
+			VictimRefs -= 1
+			If (zzestruschaurusVictims.GetNthAlias(VictimRefs)  as ReferenceAlias).ForceRefIfEmpty(akVictim)
+				(zzestruschaurusVictims.GetNthAlias(VictimRefs)  as ReferenceAlias).RegisterForSingleUpdate(5)
+				VictimRefs = 0
+			endif
+		endwhile
+
+		OnUpdate()
+		return true
     else
-        return false
+		return false
     endif	
 endfunction
 
