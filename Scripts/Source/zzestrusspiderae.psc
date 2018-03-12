@@ -32,15 +32,15 @@ event onOrgasmS(Form ActorRef, Int Thread)
 		; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
 		Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
 		if _SLP_ParasiteSpiderPenis != none
-			if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis) && controller.IsVaginal
-				SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+			if akActor.WornHasKeyword(_SLP_ParasiteSpiderPenis) && controller.IsVaginal
+				SpiderImpregnate(actorlist[0], akActor)
 				return
 			endif
 		endif
 		;See if spider was involved
 		if mcm.Sexlab.PregnancyRisk(Thread, actorlist[0], false, true)
-			if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
-				SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+			if IsSpiderRace(akActor.GetRace()) == true					;SD+ Faction changes mean we can't rely on a faction check
+				SpiderImpregnate(actorlist[0], akActor)
 			endif
 		endif
 	endif
@@ -60,18 +60,22 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
 	if actorlist.Length > 1
 		; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
 		Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
-		if _SLP_ParasiteSpiderPenis != none
-			if actorlist[actorList.Length - 1].WornHasKeyword(_SLP_ParasiteSpiderPenis) && controller.IsVaginal
-				SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
-				return
+		int i = 1
+		while i < actorlist.Length
+			if _SLP_ParasiteSpiderPenis != none
+				if actorlist[i].WornHasKeyword(_SLP_ParasiteSpiderPenis) && controller.IsVaginal
+					SpiderImpregnate(actorlist[0], actorlist[i])
+					return
+				endif
 			endif
-		endif
-		;See if spider was involved
-		if mcm.Sexlab.PregnancyRisk(argString as Int, actorlist[0], false, true)
-			if IsSpiderRace(actorlist[actorList.Length - 1].GetRace()) == true ;SD+ Faction changes mean we can't rely on a faction check
-				SpiderImpregnate(actorlist[0], actorlist[actorList.Length - 1])
+			;See if spider was involved
+			if mcm.Sexlab.PregnancyRisk(argString as Int, actorlist[0], false, true)
+				if IsSpiderRace(actorlist[i].GetRace()) == true				;SD+ Faction changes mean we can't rely on a faction check
+					SpiderImpregnate(actorlist[0], actorlist[i])
+				endif
 			endif
-		endif
+			i += 1
+		endwhile
 	endif
 endEvent
 
@@ -81,14 +85,18 @@ event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
     actor[] actorList = mcm.SexLab.HookActors(argString)
  
 	; // See if a Creature was involved, and try to fix broken spider animation it for SL1.62
-   	if actorlist.Length > 1 
-		if IsSpiderRace(actorlist[actorlist.Length - 1].GetRace())
-			Utility.Wait(0.1)
-			actorlist[actorlist.Length - 1].disable()
-			actorlist[actorlist.Length - 1].enable()
-			;Utility.Wait(1)
-			;actorlist[1].MoveToMyEditorLocation()
-		endif
+   	if actorlist.Length > 1
+		int i = 0
+		while i < actorlist.Length
+			if IsSpiderRace(actorlist[i].GetRace())
+				Utility.Wait(0.1)
+				actorlist[i].disable()
+				actorlist[i].enable()
+				;Utility.Wait(1)
+				;actorlist[1].MoveToMyEditorLocation()
+			endif
+			i += 1
+		endwhile
    	endif
 endEvent
 
@@ -108,7 +116,6 @@ bool function IsSpiderRace(race akRace)
 	endif
 	return false
 endfunction
-
 
 function SpiderImpregnate(actor akVictim, actor akAgressor)
 
