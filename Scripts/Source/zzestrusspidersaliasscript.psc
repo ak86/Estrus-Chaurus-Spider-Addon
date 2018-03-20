@@ -10,7 +10,7 @@ endFunction
 
 Float function eggChain()
 	ObjectReference[] thisEgg = new ObjectReference[13]
-	bool bHasScrotNode        = XPMSELib.HasNode(kTarget, MCM.NINODE_GENSCROT)
+	bool bHasScrotNode        = NetImmerse.HasNode(kTarget, MCM.NINODE_GENSCROT, false)
 
 	Sound.SetInstanceVolume( MCM.zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 	Int idx = 0
@@ -471,7 +471,7 @@ state AFTERMATH
 		;Debug.SendAnimationEvent(kTarget, "BleedOutStop")
 		OnBreederFinish()
 	
-		SendModEvent("ECBirthCompleted") ;as requested by Skyrimll
+		SendModEvent("ESBirthCompleted") ;as requested by Skyrimll
 
 	endEvent
 	
@@ -539,19 +539,11 @@ event OnBreederStart(Actor akTarget, Int akIncubationIdx)
 	; SexLab Aroused
 	manageSexLabAroused(0)
 
-	if MCM.CheckXPMSERequirements(kTarget, bIsFemale)
-		bEnableSkirt02     = true
-		bEnableSkirt03     = true
-		bEnableBreast      = true
-		bEnableButt        = true
-		bEnableBelly       = true
-	else
-		bEnableSkirt02     = XPMSELib.HasNode(kTarget, MCM.NINODE_SKIRT02)
-		bEnableSkirt03     = XPMSELib.HasNode(kTarget, MCM.NINODE_SKIRT03)
-		bEnableBreast      = XPMSELib.HasNode(kTarget, MCM.NINODE_LEFT_BREAST) && XPMSELib.HasNode(kTarget, MCM.NINODE_RIGHT_BREAST)
-		bEnableButt        = XPMSELib.HasNode(kTarget, MCM.NINODE_LEFT_BUTT) && XPMSELib.HasNode(kTarget, MCM.NINODE_RIGHT_BUTT)
-		bEnableBelly       = XPMSELib.HasNode(kTarget, MCM.NINODE_BELLY)
-	endif
+	bEnableSkirt02     = NetImmerse.HasNode(kTarget, MCM.NINODE_SKIRT02, false)
+	bEnableSkirt03     = NetImmerse.HasNode(kTarget, MCM.NINODE_SKIRT03, false)
+	bEnableBreast      = NetImmerse.HasNode(kTarget, MCM.NINODE_LEFT_BREAST, false) && NetImmerse.HasNode(kTarget, MCM.NINODE_RIGHT_BREAST, false)
+	bEnableButt        = NetImmerse.HasNode(kTarget, MCM.NINODE_LEFT_BUTT, false) && NetImmerse.HasNode(kTarget, MCM.NINODE_RIGHT_BUTT, false)
+	bEnableBelly       = NetImmerse.HasNode(kTarget, MCM.NINODE_BELLY, false)
 
 	if ( !bDisableNodeChange )
 		If !Check3dState()

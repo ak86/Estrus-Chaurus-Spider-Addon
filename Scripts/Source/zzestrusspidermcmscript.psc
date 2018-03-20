@@ -83,7 +83,6 @@ event OnPageReset(string a_page)
 	endIf
 
 ; ACTOR EVENTS ------------------------------------------------------------------------------------
-;	bAERegistered      =  False  ;me.aeCheck()
 ; ANIMATIONS --------------------------------------------------------------------------------------
 ;Handled by EC
 ; NODE TESTS --------------------------------------------------------------------------------------
@@ -91,7 +90,6 @@ event OnPageReset(string a_page)
 ; UNINSTALL ---------------------------------------------------------------------------------------
 	bUninstallState    = zzEstrusSpiderUninstall.GetValueInt() as bool
 ; ADDSTRIP ----------------------------------------------------------------------------------------
-;	bAddStrip          = zzEstrusSpiderAddStrip.GetValueInt() as bool ;depreciated
 ; PREGNANCY ---------------------------------------------------------------------------------------
 	bPregnancyEnabled  = !zzEstrusDisablePregnancy2.GetValueInt() as bool
 ; GROWTH ------------------------------------------------------------------------------------------
@@ -250,7 +248,6 @@ state STATE_UNINSTALL
 		zzEstrusSpiderUninstall.SetValueInt( Math.LogicalXor( 1, zzEstrusSpiderUninstall.GetValueInt() ) )
 		SetToggleOptionValueST( zzEstrusSpiderUninstall.GetValueInt() as Bool )
 		if !zzEstrusSpiderUninstall.GetValueInt() as Bool
-			;me.aeUnRegisterMod()
 		endIf
 		ForcePageReset()
 	endEvent
@@ -269,7 +266,7 @@ endState
 state STATE_FORCE_FIX
 	event OnSelectST()
 		SetToggleOptionValueST( true )
-		If ShowMessage("$EC_UPDATE_EXIT")
+		If ShowMessage("$ES_UPDATE_EXIT")
 			zzestrusspider_BodyMod BodyMod = Quest.GetQuest("zzestrusspider_BodyMod") as zzestrusspider_BodyMod
 		
 			Utility.Wait( 0.1 )
@@ -513,13 +510,8 @@ float Function GetNodeTransformScale(Actor akActor, bool isFemale, string nodeNa
 	return BodyMod.GetNodeScale(akActor, nodeName, isFemale)
 EndFunction
 
-bool Function CheckXPMSERequirements(Actor akActor, bool isFemale)
-	return Game.GetModByName("CharacterMakingExtender.esp") == 255 && XPMSELib.CheckXPMSEVersion(akActor, isFemale, XPMSE_VERSION, true) && XPMSELib.CheckXPMSELibVersion(XPMSELIB_VERSION) && SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION && NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION
-EndFunction		
-
 ; PUBLIC VARIABLES --------------------------------------------------------------------------------
 ; VERSION 0
-GlobalVariable      Property zzEstrusSpiderForceDrop        Auto
 GlobalVariable      Property zzEstrusDisablePregnancy2      Auto
 GlobalVariable      Property zzEstrusIncubationPeriod2      Auto
 GlobalVariable      Property zzEstrusSpiderInfestation      Auto
@@ -543,47 +535,35 @@ String              Property NINODE_RIGHT_BUTT     = "NPC R Butt" AutoReadOnly
 String              Property NINODE_SKIRT02        = "SkirtBBone02" AutoReadOnly
 String              Property NINODE_SKIRT03        = "SkirtBBone03" AutoReadOnly
 String              Property NINODE_BELLY          = "NPC Belly" AutoReadOnly
+String              Property NINODE_GENSCROT       = "NPC GenitalsScrotum [GenScrot]" AutoReadOnly
 Float               Property NINODE_MAX_SCALE      = 3.0 AutoReadOnly
 Float               Property NINODE_MIN_SCALE      = 0.1 AutoReadOnly
 Float               Property RESIDUAL_MULT_DEFAULT = 1.2 AutoReadOnly
-string              Property ES_KEY                = "Estrus_Spider" AutoReadOnly
-String              Property NINODE_GENSCROT       = "NPC GenitalsScrotum [GenScrot]" AutoReadOnly
 
-Armor                    Property zzEstrusChaurusFluid           Auto
-Armor                    Property zzEstrusChaurusRMilk           Auto
-Armor                    Property zzEstrusChaurusLMilk           Auto
-Faction                  Property zzEstrusSpiderBreederFaction   Auto
-Faction                  Property SexLabAnimatingFaction         Auto
-GlobalVariable           Property zzEstrusDisableNodeResize      Auto
-GlobalVariable           Property zzEstrusSwellingBreasts        Auto
-GlobalVariable           Property zzEstrusSwellingBelly          Auto
-GlobalVariable           Property zzEstrusChaurusFluids          Auto
-GlobalVariable           Property zzEstrusChaurusMaxBreastScale  Auto  
-GlobalVariable           Property zzEstrusChaurusMaxBellyScale   Auto
-GlobalVariable           Property zzEstrusChaurusMaxButtScale    Auto
-GlobalVariable           Property zzEstrusChaurusTorpedoFix      Auto  
-Ingredient               Property zzSpiderEggs                   Auto
-Spell                    Property zzEstrusSpiderBreederAbility   Auto
-Sound                    Property zzEstrusBreastPainMarker       Auto
-Static                   Property xMarker                        Auto
-
-; NiOverride version data
-int                      Property NIOVERRIDE_VERSION    = 4 AutoReadOnly
-int                      Property NIOVERRIDE_SCRIPT_VERSION = 4 AutoReadOnly
-
-; XPMSE version data
-float                    Property XPMSE_VERSION         = 3.0 AutoReadOnly
-float                    Property XPMSELIB_VERSION      = 3.0 AutoReadOnly
-
+Armor               Property zzEstrusChaurusFluid           Auto
+Armor               Property zzEstrusChaurusRMilk           Auto
+Armor               Property zzEstrusChaurusLMilk           Auto
+Faction             Property zzEstrusSpiderBreederFaction   Auto
+Faction             Property SexLabAnimatingFaction         Auto
+GlobalVariable      Property zzEstrusDisableNodeResize      Auto
+GlobalVariable      Property zzEstrusSwellingBreasts        Auto
+GlobalVariable      Property zzEstrusSwellingBelly          Auto
+GlobalVariable      Property zzEstrusChaurusFluids          Auto
+GlobalVariable      Property zzEstrusChaurusMaxBreastScale  Auto  
+GlobalVariable      Property zzEstrusChaurusMaxBellyScale   Auto
+GlobalVariable      Property zzEstrusChaurusMaxButtScale    Auto
+GlobalVariable      Property zzEstrusChaurusTorpedoFix      Auto  
+Ingredient          Property zzSpiderEggs                   Auto
+Spell               Property zzEstrusSpiderBreederAbility   Auto
+Sound               Property zzEstrusBreastPainMarker       Auto
+Static              Property xMarker                        Auto
 
 SexLabFramework     Property SexLab               Auto
-zzEstrusSpiderAE    Property me                   Auto
 String              Property TRIGGER_MENU        = "Journal Menu" AutoReadOnly
 Faction             Property kfSLAExposure         Auto  Hidden
 
 ; VERSION 3100
 GlobalVariable      Property zzEstrusSwellingButt         Auto
-GlobalVariable      Property zzEstrusSpiderMaxButtScale   Auto
 
 ; VERSION 3202
 GlobalVariable      Property zzEstrusChaurusResidual      Auto
