@@ -7,7 +7,7 @@ zzestrusspiderevents 	  property ESevents                         auto
 
 function RegisterForSLSpider()
 	
-	debug.notification("ES+ "+ mcm.GetStringVer() + " Registered...")
+	;debug.notification("ES+ "+ mcm.GetStringVer() + " Registered...")
 	RegisterForModEvent("OrgasmStart", "onOrgasm")
 	RegisterForModEvent("AnimationEnd", "OnSexLabEnd")
 	RegisterForModEvent("SexLabOrgasmSeparate", "onOrgasmS")
