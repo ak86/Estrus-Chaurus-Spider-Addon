@@ -29,17 +29,9 @@ event onOrgasmS(Form ActorRef, Int Thread)
     endif
 	
 	if actorList.Length > 1 && akActor != actorList[0]
-		; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
-		Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
-		if _SLP_ParasiteSpiderPenis != none
-			if akActor.WornHasKeyword(_SLP_ParasiteSpiderPenis) && controller.IsVaginal
-				SpiderImpregnate(actorlist[0], akActor)
-				return
-			endif
-		endif
 		;See if spider was involved
 		if mcm.Sexlab.PregnancyRisk(Thread, actorlist[0], false, true)
-			if IsSpiderRace(akActor.GetRace()) == true					;SD+ Faction changes mean we can't rely on a faction check
+			if IsSpider(akActor) == true					;Bane Master: - SD+ Faction changes mean we can't rely on a faction check. Ed86: - you cant, but i can muahahah!
 				SpiderImpregnate(actorlist[0], akActor)
 			endif
 		endif
@@ -58,19 +50,11 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
     endif
 	
 	if actorlist.Length > 1
-		; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
-		Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
 		int i = 1
 		while i < actorlist.Length
-			if _SLP_ParasiteSpiderPenis != none
-				if actorlist[i].WornHasKeyword(_SLP_ParasiteSpiderPenis) && controller.IsVaginal
-					SpiderImpregnate(actorlist[0], actorlist[i])
-					return
-				endif
-			endif
 			;See if spider was involved
 			if mcm.Sexlab.PregnancyRisk(argString as Int, actorlist[0], false, true)
-				if IsSpiderRace(actorlist[i].GetRace()) == true				;SD+ Faction changes mean we can't rely on a faction check
+				if IsSpider(actorlist[i]) == true				;Bane Master: - SD+ Faction changes mean we can't rely on a faction check. Ed86: - you cant, but i can muahahah!
 					SpiderImpregnate(actorlist[0], actorlist[i])
 				endif
 			endif
@@ -88,7 +72,7 @@ event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
    	if actorlist.Length > 1
 		int i = 0
 		while i < actorlist.Length
-			if IsSpiderRace(actorlist[i].GetRace())
+			if IsSpider(actorlist[i])
 				Utility.Wait(0.1)
 				actorlist[i].disable()
 				actorlist[i].enable()
@@ -100,8 +84,28 @@ event OnSexLabEnd(string eventName, string argString, float argNum, form sender)
    	endif
 endEvent
 
-bool function IsSpiderRace(race akRace)
-	if akRace == (Game.GetFormFromFile(0x131F8 , "Skyrim.esm") as Race) ;FrostbiteSpiderRace
+bool function IsSpider(Actor akActor)
+	; // See if actor has spider penis from SexLab Parasites - Kyne's Blessing
+	; // Non spider impregnation with _SLP_ParasiteSpiderPenis
+	Keyword _SLP_ParasiteSpiderPenis = Keyword.GetKeyword("_SLP_ParasiteSpiderPenis")
+	if _SLP_ParasiteSpiderPenis != none
+		if akActor.WornHasKeyword(_SLP_ParasiteSpiderPenis)
+			return true
+		endif
+	endif
+	
+	; // See if actor has is creature or animal and is in spider faction
+	; // Vanilla+DLC+moded spiders
+	if akActor.HasKeyword( Game.GetFormFromFile(0x13795, "Skyrim.esm") as Keyword ) || akActor.HasKeyword( Game.GetFormFromFile(0x13798, "Skyrim.esm") as Keyword ) ;ActorTypeCreature, ActorTypeAnimal Keyword
+		if akActor.IsInFaction(Game.GetFormFromFile(0x2997F , "Skyrim.esm") as Faction)	;SpiderFaction
+			return true
+		endif
+	endif
+	
+	; // See if actor is spider race
+	; // Vanilla+DLC only spiders
+	Race akRace = akActor.GetRace()
+	if akRace == (Game.GetFormFromFile(0x131F8 , "Skyrim.esm") as Race)	;FrostbiteSpiderRace
 		return true
 	elseif akRace == (Game.GetFormFromFile(0x4e507 , "Skyrim.esm") as Race) ;FrostbiteSpiderRaceGiant
 		return true
@@ -114,6 +118,7 @@ bool function IsSpiderRace(race akRace)
 			return true
 		endif
 	endif
+	
 	return false
 endfunction
 
@@ -121,7 +126,7 @@ function SpiderImpregnate(actor akVictim, actor akAgressor)
 
 	Bool bGenderOk = mcm.zzEstrusChaurusGender.GetValueInt() == 2 || akvictim.GetLeveledActorBase().GetSex() == mcm.zzEstrusChaurusGender.GetValueInt()
 	Bool invalidateVictim = !bGenderOk || ( akVictim.IsBleedingOut() || akVictim.isDead() )
-
+	
 	if invalidateVictim
 		return
 	endif
