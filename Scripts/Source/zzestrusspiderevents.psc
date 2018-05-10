@@ -463,7 +463,15 @@ Function Oviposition(actor akVictim, bool UseParasiteSpell = true)
 		if akVictim.HasKeyword( Game.GetFormFromFile(0x4F2A3, "EstrusDwemer.esp") as Keyword )	;zzEstrusDwemerParasiteKWD Keyword
 			invalidateVictim = True
 		endif
-
+	
+	;Hentai pregnancy LE/SE
+		Faction HentaiPregnantFaction = ( Game.GetFormFromFile(0x12085, "HentaiPregnancy.esm") as Faction )		;HentaiPregnantFaction
+		if HentaiPregnantFaction
+			if akVictim.GetFactionRank(HentaiPregnantFaction) == 2 || akVictim.GetFactionRank(HentaiPregnantFaction) == 3
+				invalidateVictim = True
+			endif
+		endif
+	
 	if !invalidateVictim
 		if akVictim == PlayerRef
 			if akVictim.IsInFaction(mcm.zzEstrusSpiderBreederFaction)

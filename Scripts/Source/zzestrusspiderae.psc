@@ -1,6 +1,7 @@
 Scriptname zzEstrusSpiderAE extends Quest
 
 Spell                     property zzSpiderParasite                 auto 
+Spell					  property zzEstrusSpiderAnimationCooldown	auto 
 
 zzEstrusSpiderMCMScript   property mcm                              auto 
 zzestrusspiderevents 	  property ESevents                         auto 
@@ -146,32 +147,36 @@ endfunction
 
 function SpiderSpitAttack(Actor akVictim, Actor akAgressor)
 
-	if mcm.TentacleSpitEnabled
-		if utility.randomint(1,100) <= mcm.TentacleSpitChance
-			
-			if ESevents.OnESStartAnimation(self, akVictim, 0, true, 0, true)
-				if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
-					akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
-				endif
+	if !akVictim.HasSpell(zzEstrusSpiderAnimationCooldown)
+		if mcm.TentacleSpitEnabled
+			if utility.randomint(1,100) <= mcm.TentacleSpitChance
+				zzEstrusSpiderAnimationCooldown.cast(akVictim,akVictim)
+				
+				if ESevents.OnESStartAnimation(self, akVictim, 0, true, 0, true)
+					if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
+						akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
+					endif
+				endIf
 			endIf
-		endIf
-	elseif mcm.ParalyzeSpitEnabled
-		if utility.randomint(1,100) <= mcm.ParalyzeSpitChance
-			
-			Spell paralyzeSpell = (Game.GetFormFromFile(0x52DE4 , "EstrusSpider.esp") as Spell)
-            if paralyzeSpell
-                paralyzeSpell.cast(akAgressor,akVictim)
-                Utility.wait(2.0)
-                akVictim.dispelSpell(paralyzeSpell)
-                Utility.wait(1.0)
-           endif
-            
-			if ESevents.OnESStartAnimation_xjAlt(self, akVictim, akAgressor)
-				if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
-					akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
-				endif
+		elseif mcm.ParalyzeSpitEnabled
+			if utility.randomint(1,100) <= mcm.ParalyzeSpitChance
+				zzEstrusSpiderAnimationCooldown.cast(akVictim,akVictim)
+				
+				Spell paralyzeSpell = (Game.GetFormFromFile(0x52DE4 , "EstrusSpider.esp") as Spell)
+				if paralyzeSpell
+					paralyzeSpell.cast(akAgressor,akVictim)
+					Utility.wait(2.0)
+					akVictim.dispelSpell(paralyzeSpell)
+					Utility.wait(1.0)
+			   endif
+				
+				if ESevents.OnESStartAnimation_xjAlt(self, akVictim, akAgressor)
+					if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
+						akAgressor.AddToFaction(mcm.zzEstrusSpiderBreederFaction)
+					endif
+				endIf
 			endIf
-		endIf
+		endif
 	endif
 	
 endfunction
