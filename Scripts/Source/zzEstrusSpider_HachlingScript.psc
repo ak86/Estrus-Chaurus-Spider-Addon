@@ -1,4 +1,6 @@
-Scriptname zzEncSpiderHachlingScript extends Actor
+Scriptname zzEstrusSpider_HachlingScript extends Actor
+
+SPELL Property crSpider01PoisonSpit  Auto  
 
 event OnLoad()
 	self.SetAV("SpeedMult", 150.0 / Self.GetScale() )
@@ -11,5 +13,3 @@ event OnItemAdded(Form akBaseItem, int aiItemCount, ObjectReference akItemRefere
 		self.AddSpell( crSpider01PoisonSpit )
 	endIf
 endEvent
-
-SPELL Property crSpider01PoisonSpit  Auto  

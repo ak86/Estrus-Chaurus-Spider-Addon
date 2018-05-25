@@ -1,6 +1,6 @@
-Scriptname zzestrusSpiderevents extends Quest
+Scriptname zzEstrusSpider_Events extends Quest
 
-zzEstrusSpiderMCMScript  property mcm Auto
+zzEstrusSpider_MCMScript  property mcm Auto
 
 Actor[] sexActors
 
@@ -92,7 +92,6 @@ Function OnESRegisterforStage(String strEventName, String strReqCB, Float fStage
 	iNotifyStage = fStage as Int
 	strCallback = strReqCB
 EndFunction
-
 
 bool function OnESStartAnimation_xjAlt(Form Sender, actor akVictim, actor akAggressor)
     ;debug.Notification("Xj - spit start")
@@ -322,7 +321,7 @@ event ESAnimStage(string hookName, string argString, float argNum, form sender)
 			;endif
 		;endif
 
-		if stage == 7 && !(mcm.zzEstrusDisablePregnancy2.GetValueInt() as Bool) && UseESFX
+		if stage == 7 && !(mcm.zzEstrusSpiderDisablePregnancy.GetValueInt() as Bool) && UseESFX
 			Oviposition(actorlist[0], true)
 		endIf
 	elseif animation.hastag("Machine")
@@ -486,7 +485,7 @@ Function Oviposition(actor akVictim, bool UseParasiteSpell = true)
 				Int BreederIdx = MCM.kIncubationDue.Find(none, 1)
 				if BreederIdx > 0
 					(zzEstrusSpider.GetNthAlias(BreederIdx) as ReferenceAlias).ForceRefTo(akVictim)
-					(zzEstrusSpider.GetNthAlias(BreederIdx) as zzestrusspidersaliasscript).OnBreederStart(akVictim, BreederIdx)
+					(zzEstrusSpider.GetNthAlias(BreederIdx) as zzEstrusSpider_AliasScript).OnBreederStart(akVictim, BreederIdx)
 				endif
 			else
 				return

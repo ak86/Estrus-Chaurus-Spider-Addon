@@ -1,4 +1,88 @@
-Scriptname zzEstrusSpiderMCMScript extends SKI_ConfigBase  Conditional
+Scriptname zzEstrusSpider_MCMScript extends SKI_ConfigBase  Conditional
+
+; PUBLIC VARIABLES --------------------------------------------------------------------------------
+; VERSION 0
+GlobalVariable      Property zzEstrusSpiderDisablePregnancy Auto
+GlobalVariable      Property zzEstrusSpiderIncubationPeriod Auto
+GlobalVariable      Property zzEstrusSpiderInfestation      Auto
+GlobalVariable      Property zzEstrusSpiderUninstall        Auto
+GlobalVariable      Property zzEstrusSpiderInfected         Auto
+GlobalVariable      Property zzEstrusSpiderFertilityChance  Auto
+MagicEffect         Property zzEstrusSpiderBreederEffect    Auto
+Actor               Property Player                         Auto
+Float[]             Property fIncubationDue                 Auto
+Actor[]             Property kIncubationDue                 Auto
+Float[]             Property fHatchingDue                   Auto
+ObjectReference[]   Property kHatchingEgg                   Auto
+Actor[]             Property kIncubationOff                 Auto
+
+String              Property NINODE_LEFT_BREAST    = "NPC L Breast" AutoReadOnly
+String              Property NINODE_LEFT_BREAST01  = "NPC L Breast01" AutoReadOnly
+String              Property NINODE_LEFT_BUTT      = "NPC L Butt" AutoReadOnly
+String              Property NINODE_RIGHT_BREAST   = "NPC R Breast" AutoReadOnly
+String              Property NINODE_RIGHT_BREAST01 = "NPC R Breast01" AutoReadOnly
+String              Property NINODE_RIGHT_BUTT     = "NPC R Butt" AutoReadOnly
+String              Property NINODE_SKIRT02        = "SkirtBBone02" AutoReadOnly
+String              Property NINODE_SKIRT03        = "SkirtBBone03" AutoReadOnly
+String              Property NINODE_BELLY          = "NPC Belly" AutoReadOnly
+String              Property NINODE_GENSCROT       = "NPC GenitalsScrotum [GenScrot]" AutoReadOnly
+Float               Property NINODE_MAX_SCALE      = 3.0 AutoReadOnly
+Float               Property NINODE_MIN_SCALE      = 0.1 AutoReadOnly
+Float               Property RESIDUAL_MULT_DEFAULT = 1.2 AutoReadOnly
+
+Armor               Property zzEstrusChaurusFluid           Auto
+Armor               Property zzEstrusChaurusRMilk           Auto
+Armor               Property zzEstrusChaurusLMilk           Auto
+Faction             Property zzEstrusSpiderBreederFaction   Auto
+Faction             Property SexLabAnimatingFaction         Auto
+GlobalVariable      Property zzEstrusDisableNodeResize      Auto
+GlobalVariable      Property zzEstrusSwellingBreasts        Auto
+GlobalVariable      Property zzEstrusSwellingBelly          Auto
+GlobalVariable      Property zzEstrusChaurusFluids          Auto
+GlobalVariable      Property zzEstrusChaurusMaxBreastScale  Auto  
+GlobalVariable      Property zzEstrusChaurusMaxBellyScale   Auto
+GlobalVariable      Property zzEstrusChaurusMaxButtScale    Auto
+GlobalVariable      Property zzEstrusChaurusTorpedoFix      Auto  
+Ingredient          Property zzEstrusSpiderEggs             Auto
+Spell               Property zzEstrusSpiderBreederAbility   Auto
+Sound               Property zzEstrusBreastPainMarker       Auto
+Static              Property xMarker                        Auto
+
+SexLabFramework     Property SexLab               			Auto
+String              Property TRIGGER_MENU = "Journal Menu" 	AutoReadOnly
+Faction             Property kfSLAExposure         			Auto  Hidden
+
+; VERSION 3100
+GlobalVariable      Property zzEstrusSwellingButt         	Auto
+
+; VERSION 3202
+GlobalVariable      Property zzEstrusChaurusResidual      	Auto
+GlobalVariable      Property zzEstrusChaurusResidualScale 	Auto
+
+; VERSION 3330
+GlobalVariable      Property zzEstrusChaurusGender        	Auto
+
+; VERSION 3940
+GlobalVariable      Property zzEstrusSpiderBirth      	  	Auto
+
+; PRIVATE VARIABLES -------------------------------------------------------------------------------
+; VERSION 1
+; OIDs (T:Text B:Toggle S:Slider M:Menu, C:Color, K:Key)
+; lists
+
+; Internal
+float timeLeft
+int iIndex
+int iCount
+
+; VERSION 2
+String thisName            = ""
+String thisTime            = ""
+Int  iOptionFlag           = 0
+bool bPregnancyEnabled     = False
+bool bUninstallState       = False
+bool bUninstallMessage     = False
+Bool bTorpedoFixEnabled    = True
 
 ;OIDs
 
@@ -91,7 +175,7 @@ event OnPageReset(string a_page)
 	bUninstallState    = zzEstrusSpiderUninstall.GetValueInt() as bool
 ; ADDSTRIP ----------------------------------------------------------------------------------------
 ; PREGNANCY ---------------------------------------------------------------------------------------
-	bPregnancyEnabled  = !zzEstrusDisablePregnancy2.GetValueInt() as bool
+	bPregnancyEnabled  = !zzEstrusSpiderDisablePregnancy.GetValueInt() as bool
 ; GROWTH ------------------------------------------------------------------------------------------
 ;Handled by EC
 ; GENERAL -----------------------------------------------------------------------------------------
@@ -151,8 +235,8 @@ event OnPageReset(string a_page)
 		AddHeaderOption("$ES_PREGNANCY_TITLE")
 		AddToggleOptionST("STATE_PREGNANCY", "$ES_PREGNANCY", bPregnancyEnabled, iOptionFlag)
 		if bPregnancyEnabled
-			AddSliderOptionST("STATE_PERIOD", "$ES_PERIOD", zzEstrusIncubationPeriod2.GetValue(), "{0}", iOptionFlag)
-			AddSliderOptionST("STATE_FERTILITY_CHANCE", "$ES_FERTILITY_CHANCE", zzEstrusFertilityChance2.GetValue(), "{0}", iOptionFlag)
+			AddSliderOptionST("STATE_PERIOD", "$ES_PERIOD", zzEstrusSpiderIncubationPeriod.GetValue(), "{0}", iOptionFlag)
+			AddSliderOptionST("STATE_FERTILITY_CHANCE", "$ES_FERTILITY_CHANCE", zzEstrusSpiderFertilityChance.GetValue(), "{0}", iOptionFlag)
 			AddToggleOptionST("STATE_LIMIT_BIRTH_DURATION_TOGGLE", "$ES_LIMIT_BIRTH", zzEstrusSpiderBirth.GetValue(), iOptionFlag)
 ; AFTEREFFECTS ------------------------------------------------------------------------------------
 			AddToggleOptionST("STATE_INFESTATION", "$ES_INFESTATION", zzEstrusSpiderInfestation.GetValueInt() as bool, iOptionFlag)
@@ -174,7 +258,7 @@ event OnPageReset(string a_page)
 					thisName = kHatchingEgg[iIndex].GetCurrentLocation().GetName()
 					AddTextOption(thisName, thisTime, iOptionFlag)
 				else
-					( kHatchingEgg[iIndex] as zzSpiderEggsScript ).hatch()
+					( kHatchingEgg[iIndex] as zzEstrusSpider_EggsScript ).hatch()
 				endIf
 				iCount += 1
 			elseIf fHatchingDue[iIndex] != 0.0
@@ -326,13 +410,13 @@ endState
 ; PREGNANCY ---------------------------------------------------------------------------------------
 state STATE_PREGNANCY ; TOGGLE
 	event OnSelectST()
-		zzEstrusDisablePregnancy2.SetValueInt( Math.LogicalXor( 1, zzEstrusDisablePregnancy2.GetValueInt() ) )
-		SetToggleOptionValueST( zzEstrusDisablePregnancy2.GetValueInt() as Bool )
+		zzEstrusSpiderDisablePregnancy.SetValueInt( Math.LogicalXor( 1, zzEstrusSpiderDisablePregnancy.GetValueInt() ) )
+		SetToggleOptionValueST( zzEstrusSpiderDisablePregnancy.GetValueInt() as Bool )
 		ForcePageReset()
 	endEvent
 
 	event OnDefaultST()
-		zzEstrusDisablePregnancy2.SetValueInt( 0 )
+		zzEstrusSpiderDisablePregnancy.SetValueInt( 0 )
 		SetToggleOptionValueST( false )
 		ForcePageReset()
 	endEvent
@@ -344,7 +428,7 @@ endState
 
 state STATE_PERIOD ; SLIDER
 	event OnSliderOpenST()
-		SetSliderDialogStartValue( zzEstrusIncubationPeriod2.GetValueInt() )
+		SetSliderDialogStartValue( zzEstrusSpiderIncubationPeriod.GetValueInt() )
 		SetSliderDialogDefaultValue( 3 )
 		SetSliderDialogRange( 1, 30 )
 		SetSliderDialogInterval( 1 )
@@ -352,12 +436,12 @@ state STATE_PERIOD ; SLIDER
 
 	event OnSliderAcceptST(float value)
 		int thisValue = value as int
-		zzEstrusIncubationPeriod2.SetValueInt( thisValue )
+		zzEstrusSpiderIncubationPeriod.SetValueInt( thisValue )
 		SetSliderOptionValueST( thisValue )
 	endEvent
 
 	event OnDefaultST()
-		zzEstrusIncubationPeriod2.SetValueInt( 3 )
+		zzEstrusSpiderIncubationPeriod.SetValueInt( 3 )
 		SetSliderOptionValueST( 3 )
 	endEvent
 
@@ -368,7 +452,7 @@ endState
 
 state STATE_FERTILITY_CHANCE ; SLIDER
 	event OnSliderOpenST()
-		SetSliderDialogStartValue( zzEstrusFertilityChance2.GetValue() )
+		SetSliderDialogStartValue( zzEstrusSpiderFertilityChance.GetValue() )
 		SetSliderDialogDefaultValue( 5 )
 		SetSliderDialogRange( 0, 25 )
 		SetSliderDialogInterval( 1 )
@@ -376,12 +460,12 @@ state STATE_FERTILITY_CHANCE ; SLIDER
 
 	event OnSliderAcceptST(float value)
 		int thisValue = value as int
-		zzEstrusFertilityChance2.SetValue( thisValue )
+		zzEstrusSpiderFertilityChance.SetValue( thisValue )
 		SetSliderOptionValueST( thisValue )
 	endEvent
 
 	event OnDefaultST()
-		zzEstrusFertilityChance2.SetValue( 5 )
+		zzEstrusSpiderFertilityChance.SetValue( 5 )
 		SetSliderOptionValueST( 5 )
 	endEvent
 
@@ -509,87 +593,3 @@ float Function GetNodeTransformScale(Actor akActor, bool isFemale, string nodeNa
 
 	return BodyMod.GetNodeScale(akActor, nodeName, isFemale)
 EndFunction
-
-; PUBLIC VARIABLES --------------------------------------------------------------------------------
-; VERSION 0
-GlobalVariable      Property zzEstrusDisablePregnancy2      Auto
-GlobalVariable      Property zzEstrusIncubationPeriod2      Auto
-GlobalVariable      Property zzEstrusSpiderInfestation      Auto
-GlobalVariable      Property zzEstrusSpiderUninstall        Auto
-GlobalVariable      Property zzEstrusSpiderInfected         Auto
-GlobalVariable      Property zzEstrusFertilityChance2       Auto
-MagicEffect         Property zzEstrusBreederEffect2         Auto
-Actor               Property Player                         Auto
-Float[]             Property fIncubationDue                 Auto
-Actor[]             Property kIncubationDue                 Auto
-Float[]             Property fHatchingDue                   Auto
-ObjectReference[]   Property kHatchingEgg                   Auto
-Actor[]             Property kIncubationOff                 Auto
-
-String              Property NINODE_LEFT_BREAST    = "NPC L Breast" AutoReadOnly
-String              Property NINODE_LEFT_BREAST01  = "NPC L Breast01" AutoReadOnly
-String              Property NINODE_LEFT_BUTT      = "NPC L Butt" AutoReadOnly
-String              Property NINODE_RIGHT_BREAST   = "NPC R Breast" AutoReadOnly
-String              Property NINODE_RIGHT_BREAST01 = "NPC R Breast01" AutoReadOnly
-String              Property NINODE_RIGHT_BUTT     = "NPC R Butt" AutoReadOnly
-String              Property NINODE_SKIRT02        = "SkirtBBone02" AutoReadOnly
-String              Property NINODE_SKIRT03        = "SkirtBBone03" AutoReadOnly
-String              Property NINODE_BELLY          = "NPC Belly" AutoReadOnly
-String              Property NINODE_GENSCROT       = "NPC GenitalsScrotum [GenScrot]" AutoReadOnly
-Float               Property NINODE_MAX_SCALE      = 3.0 AutoReadOnly
-Float               Property NINODE_MIN_SCALE      = 0.1 AutoReadOnly
-Float               Property RESIDUAL_MULT_DEFAULT = 1.2 AutoReadOnly
-
-Armor               Property zzEstrusChaurusFluid           Auto
-Armor               Property zzEstrusChaurusRMilk           Auto
-Armor               Property zzEstrusChaurusLMilk           Auto
-Faction             Property zzEstrusSpiderBreederFaction   Auto
-Faction             Property SexLabAnimatingFaction         Auto
-GlobalVariable      Property zzEstrusDisableNodeResize      Auto
-GlobalVariable      Property zzEstrusSwellingBreasts        Auto
-GlobalVariable      Property zzEstrusSwellingBelly          Auto
-GlobalVariable      Property zzEstrusChaurusFluids          Auto
-GlobalVariable      Property zzEstrusChaurusMaxBreastScale  Auto  
-GlobalVariable      Property zzEstrusChaurusMaxBellyScale   Auto
-GlobalVariable      Property zzEstrusChaurusMaxButtScale    Auto
-GlobalVariable      Property zzEstrusChaurusTorpedoFix      Auto  
-Ingredient          Property zzSpiderEggs                   Auto
-Spell               Property zzEstrusSpiderBreederAbility   Auto
-Sound               Property zzEstrusBreastPainMarker       Auto
-Static              Property xMarker                        Auto
-
-SexLabFramework     Property SexLab               Auto
-String              Property TRIGGER_MENU        = "Journal Menu" AutoReadOnly
-Faction             Property kfSLAExposure         Auto  Hidden
-
-; VERSION 3100
-GlobalVariable      Property zzEstrusSwellingButt         Auto
-
-; VERSION 3202
-GlobalVariable      Property zzEstrusChaurusResidual      Auto
-GlobalVariable      Property zzEstrusChaurusResidualScale Auto
-
-; VERSION 3330
-GlobalVariable      Property zzEstrusChaurusGender        Auto
-
-; VERSION 3940
-GlobalVariable      Property zzEstrusSpiderBirth      	  Auto
-
-; PRIVATE VARIABLES -------------------------------------------------------------------------------
-; VERSION 1
-; OIDs (T:Text B:Toggle S:Slider M:Menu, C:Color, K:Key)
-; lists
-
-; Internal
-float timeLeft
-int iIndex
-int iCount
-
-; VERSION 2
-String thisName            = ""
-String thisTime            = ""
-Int  iOptionFlag           = 0
-bool bPregnancyEnabled     = False
-bool bUninstallState       = False
-bool bUninstallMessage     = False
-Bool bTorpedoFixEnabled    = True

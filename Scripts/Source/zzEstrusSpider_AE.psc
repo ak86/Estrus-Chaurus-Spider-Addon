@@ -1,10 +1,10 @@
-Scriptname zzEstrusSpiderAE extends Quest
+Scriptname zzEstrusSpider_AE extends Quest
 
-Spell                     property zzSpiderParasite                 auto 
-Spell					  property zzEstrusSpiderAnimationCooldown	auto 
+zzEstrusSpider_MCMScript property mcm auto 
+zzEstrusSpider_Events property ESevents auto 
 
-zzEstrusSpiderMCMScript   property mcm                              auto 
-zzestrusspiderevents 	  property ESevents                         auto 
+Spell property zzEstrusSpiderParasite auto 
+Spell property zzEstrusSpiderAnimationCooldown auto 
 
 function RegisterForSLSpider()
 	
@@ -25,7 +25,7 @@ event onOrgasmS(Form ActorRef, Int Thread)
     actor[] actorList = mcm.SexLab.HookActors(Thread as string)
 	sslThreadController controller = mcm.Sexlab.GetController(Thread)
  
-	if mcm.zzEstrusDisablePregnancy2.GetValueInt()
+	if mcm.zzEstrusSpiderDisablePregnancy.GetValueInt()
     	return
     endif
 	
@@ -46,7 +46,7 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
     actor[] actorList = mcm.SexLab.HookActors(argString)
  	sslThreadController controller = mcm.Sexlab.GetController(argString as Int)
 
-	if mcm.zzEstrusDisablePregnancy2.GetValueInt()
+	if mcm.zzEstrusSpiderDisablePregnancy.GetValueInt()
     	return
     endif
 	
@@ -141,7 +141,7 @@ function SpiderImpregnate(actor akVictim, actor akAgressor)
 	mcm.SexLab.ApplyCum(akvictim, 7)
 	
 	utility.wait(5) ; Allow time for ES to register oviposition and crowd control to kick in
-	akVictim.DispelSpell(zzSpiderParasite)
+	akVictim.DispelSpell(zzEstrusSpiderParasite)
 
 endfunction
 

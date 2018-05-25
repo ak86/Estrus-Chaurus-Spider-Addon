@@ -1,4 +1,204 @@
-Scriptname zzEstrusSpiderBreederEffectScript extends activemagiceffect
+Scriptname zzEstrusSpider_BreederEffectScript extends activemagiceffect
+
+zzEstrusSpider_MCMScript 	Property MCM				Auto 
+Float 						Property fIncubationTime	Auto
+
+Actor kTarget = None
+Actor kCaster = None
+Actor kPlayer = None
+Bool  bDisableNodeChange 	= False
+Bool  bEnableBreast 		= False
+Bool  bEnableButt 			= False
+Bool  bEnableBelly 			= False
+Bool  bEnableSkirt02 		= False
+Bool  bEnableSkirt03 		= False
+Bool  bBreastEnabled	 	= False
+Bool  bButtEnabled 			= False
+Bool  bBellyEnabled 		= False
+Bool  bUninstall 			= False
+Bool  bIsFemale 			= False
+Bool  bTorpedoFixEnabled 	= True
+Float fOrigBreast 			= 1.0
+Float fPregBreast 			= 1.0
+Float fResiBreast 			= 1.0
+Float fOrigBreast01 		= 1.0
+Float fPregBreast01 		= 1.0
+Float fOrigButt 			= 1.0
+Float fPregButt 			= 1.0
+Float fOrigBelly 			= 1.0
+Float fPregBelly 			= 1.0
+Float fInfectionStart 		= 0.0
+Float fInfectionSwell 		= 0.0
+Float fInfectionLastMsg 	= 0.0
+Float fBreastSwell 			= 0.0
+Int   iBreastSwellGlobal 	= 0
+Float fButtSwell 			= 0.0
+Int   iButtSwellGlobal 		= 0
+Float fBellySwell 			= 0.0
+Int   iBellySwellGlobal 	= 0
+Float fUpdateTime 			= 5.0
+Float fWaitingTime 			= 10.0
+Float fOviparityTime 		= 7.5
+
+; * zzEstrusSpiderIncubationPeriod ( days )
+Float fIncubationTimeMin 	= 22.6
+Float fIncubationTimeMax 	= 26.6
+Float fthisIncubation 		= 0.0
+Float fGameTime 			= 0.0
+Int iIncubationIdx 			= -1
+Int iBirthingLoops 			= 3
+
+; SexLab Aroused
+Int iOrigSLAExposureRank	= -3
+Int iAnimationIndex 		= 1
+bool bIsAnimating			= false
+
+String[] sSwellingMsgs
+
+event OnEffectStart(Actor akTarget, Actor akCaster)
+	kTarget = akTarget
+	kCaster = akCaster
+	kPlayer = Game.GetPlayer()
+	bDisableNodeChange = MCM.zzEstrusDisableNodeResize.GetValue() as Bool
+	bIsAnimating	 = false
+	
+	sSwellingMsgs = new String[3]
+	sSwellingMsgs[0] = "$ES_SWELLING_1_3RD"
+	sSwellingMsgs[1] = "$ES_SWELLING_2_3RD"
+	sSwellingMsgs[2] = "$ES_SWELLING_3_3RD"
+
+	GoToState("IMPREGNATE")
+	MCM.zzEstrusSpiderInfected.Mod( 1.0 )
+	kTarget.StopCombatAlarm()
+
+	Float fMinTime = MCM.zzEstrusSpiderIncubationPeriod.GetValue() * fIncubationTimeMin
+	Float fMaxTime = MCM.zzEstrusSpiderIncubationPeriod.GetValue() * fIncubationTimeMax
+	fIncubationTime = Utility.RandomFloat( fMinTime, fMaxTime )
+	fInfectionStart = Utility.GetCurrentGameTime()
+	fthisIncubation = fInfectionStart + ( fIncubationTime / 24.0 )
+	bIsFemale = kTarget.GetLeveledActorBase().GetSex() == 1
+	bTorpedoFixEnabled = MCM.zzEstrusChaurusTorpedoFix.GetValueInt() as Bool
+
+	;kCaster.PathToReference(kTarget, 1.0)
+	
+	if ( !kTarget.IsInFaction(MCM.zzEstrusSpiderBreederFaction) )
+		kTarget.AddToFaction(MCM.zzEstrusSpiderBreederFaction)
+	endIf
+
+	if kTarget == kPlayer
+		iIncubationIdx = 0
+		MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
+		MCM.kIncubationDue[iIncubationIdx] = kTarget
+
+		if kPlayer.GetAnimationVariableInt("i1stPerson") as bool
+			Game.ForceThirdPerson()
+		endIf
+	else
+		iIncubationIdx = MCM.kIncubationDue.Find(none, 1)
+		if iIncubationIdx != -1
+			MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
+			MCM.kIncubationDue[iIncubationIdx] = kTarget
+			
+			Quest ES = Quest.GetQuest("zzEstrusSpiderMCM")
+			(ES.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
+		else
+			kTarget.RemoveSpell(MCM.zzEstrusSpiderBreederAbility)
+			return
+		endif
+	endif
+
+	; SexLab Aroused
+	manageSexLabAroused(0)
+
+	bEnableSkirt02 = NetImmerse.HasNode(kTarget, MCM.NINODE_SKIRT02, false)
+	bEnableSkirt03 = NetImmerse.HasNode(kTarget, MCM.NINODE_SKIRT03, false)
+	bEnableBreast = NetImmerse.HasNode(kTarget, MCM.NINODE_LEFT_BREAST, false) && NetImmerse.HasNode(kTarget, MCM.NINODE_RIGHT_BREAST, false)
+	bEnableButt = NetImmerse.HasNode(kTarget, MCM.NINODE_LEFT_BUTT, false) && NetImmerse.HasNode(kTarget, MCM.NINODE_RIGHT_BUTT, false)
+	bEnableBelly = NetImmerse.HasNode(kTarget, MCM.NINODE_BELLY, false)
+
+	if ( !bDisableNodeChange )
+		bBreastEnabled = ( bEnableBreast && MCM.zzEstrusSwellingBreasts.GetValueInt() as bool )
+		bButtEnabled = ( bEnableButt && MCM.zzEstrusSwellingButt.GetValueInt() as bool )
+		bBellyEnabled = ( bEnableBelly && MCM.zzEstrusSwellingBelly.GetValueInt() as bool )
+
+		if ( bBreastEnabled && kTarget.GetLeveledActorBase().GetSex() == 1 )
+			fOrigBreast = MCM.GetNodeTransformScale(kTarget, bIsFemale, MCM.NINODE_LEFT_BREAST)
+			if bTorpedoFixEnabled
+				fOrigBreast01 = MCM.GetNodeTransformScale(kTarget, bIsFemale, MCM.NINODE_LEFT_BREAST01)
+			endif
+		endif
+		if ( bButtEnabled )
+			fOrigButt = MCM.GetNodeTransformScale(kTarget, bIsFemale, MCM.NINODE_LEFT_BUTT)
+		endif
+		if ( bBellyEnabled )
+			fOrigBelly = MCM.GetNodeTransformScale(kTarget, bIsFemale, MCM.NINODE_BELLY)
+		endif
+	endif
+
+	if bEnableSkirt02
+		RegisterForSingleUpdate( fUpdateTime )
+		RegisterForSingleUpdateGameTime( fIncubationTime )
+	Else
+		Debug.MessageBox("$ES_INCOMPATIBLE")
+		kTarget.RemoveSpell(MCM.zzEstrusSpiderBreederAbility)
+	endif
+endEvent
+
+event OnEffectFinish(Actor akTarget, Actor akCaster)
+	MCM.zzEstrusSpiderInfected.Mod( -1.0 )
+	bUninstall = MCM.zzEstrusSpiderUninstall.GetValueInt() as Bool
+
+	if iIncubationIdx != -1
+		MCM.fIncubationDue[iIncubationIdx] = 0.0
+		MCM.kIncubationDue[iIncubationIdx] = None
+		if kTarget != kPlayer
+			;(ES.GetAlias(iIncubationIdx) as ReferenceAlias).Clear()
+		endif
+	endIf
+
+	if ( kTarget.IsInFaction(MCM.zzEstrusSpiderBreederFaction) )
+		kTarget.RemoveFromFaction(MCM.zzEstrusSpiderBreederFaction)
+	endIf
+
+	; if we are uninstalling, report the first 128 infected NPCs
+	if ( bUninstall )
+		iIncubationIdx = MCM.kIncubationOff.Find(none)
+		if ( iIncubationIdx >= 0 )
+			MCM.kIncubationOff[iIncubationIdx] = kTarget
+		endif
+	endIf
+	
+	; SexLab Aroused
+	manageSexLabAroused()
+
+	if ( !bDisableNodeChange )
+		; make sure we have loaded 3d to access
+		while ( !kTarget.Is3DLoaded() || kTarget.IsOnMount() || Utility.IsInMenuMode() )
+			Utility.Wait( 1.0 )
+		endWhile
+
+		if ( bBellyEnabled )
+			MCM.SetNodeScaleBelly(kTarget, bIsFemale, fOrigBelly)
+		endif
+
+		if ( bButtEnabled )
+			MCM.SetNodeScaleButt(kTarget, bIsFemale, fOrigButt)
+		endif
+
+		if ( bBreastEnabled )
+			MCM.SetNodeScaleBreast(kTarget, bIsFemale, fOrigBreast, fOrigBreast01)
+		endif
+		
+		triggerNodeUpdate(true)
+	endif
+endEvent
+
+event OnUpdateGameTime()
+	Utility.Wait( 5.0 )
+
+	Debug.Trace("_ES_::GTS::BIRTHING")
+	GoToState("BIRTHING")
+endEvent
 
 int function minInt(int iA, int iB)
 	if iA < iB
@@ -10,13 +210,13 @@ endFunction
 
 Float function eggChain()
 	ObjectReference[] thisEgg = new ObjectReference[13]
-	bool bHasScrotNode        = NetImmerse.HasNode(kTarget, MCM.NINODE_GENSCROT, false)
+	bool bHasScrotNode = NetImmerse.HasNode(kTarget, MCM.NINODE_GENSCROT, false)
 
 	Sound.SetInstanceVolume( MCM.zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 	Int idx = 0
 	Int len = Utility.RandomInt( 5, 9 )
 	while idx < len
-		thisEgg[idx] = kTarget.PlaceAtme(MCM.zzSpiderEggs, abForcePersist = true)
+		thisEgg[idx] = kTarget.PlaceAtme(MCM.zzEstrusSpiderEggs, abForcePersist = true)
 		thisEgg[idx].SetActorOwner( kTarget.GetActorBase() )
 
 			If bHasScrotNode
@@ -49,9 +249,9 @@ function oviposition()
 		return
 	endIf
 	
-	fReduction       = eggChain()
+	fReduction = eggChain()
 	fBreastReduction = fReduction / 2.0
-	fButtReduction   = fReduction / 2.0
+	fButtReduction = fReduction / 2.0
 		
 	; BELLY SWELL =====================================================
 	if ( bBellyEnabled )
@@ -68,10 +268,10 @@ function oviposition()
 	
 	; BUTT SWELL ======================================================
 	if ( bButtEnabled )
-		fPregButt  = fPregButt  - fButtReduction
+		fPregButt = fPregButt - fButtReduction
 
 		if ( fPregButt <= fOrigButt )
-			fPregButt  = fOrigButt
+			fPregButt = fOrigButt
 			finished = ( !bBellyEnabled && !bBreastEnabled )
 		endif
 		
@@ -81,9 +281,9 @@ function oviposition()
 	
 	; BREAST SWELL ====================================================
 	if ( bBreastEnabled )
-		fPregBreast        = fPregBreast - fBreastReduction
+		fPregBreast = fPregBreast - fBreastReduction
 		if bTorpedoFixEnabled
-			fPregBreast01  = fOrigBreast01 * (fOrigBreast / fPregBreast)
+			fPregBreast01 = fOrigBreast01 * (fOrigBreast / fPregBreast)
 		endIf
 
 		if ( fPregBreast <= fOrigBreast )
@@ -93,7 +293,7 @@ function oviposition()
 
 		if bTorpedoFixEnabled
 			if ( fPregBreast01 < fOrigBreast01 )
-				fPregBreast01  = fOrigBreast01
+				fPregBreast01 = fOrigBreast01
 			endif
 		endif
 		
@@ -140,16 +340,10 @@ endFunction
 
 function triggerNodeUpdate(bool abwait = false)
 	iBreastSwellGlobal = MCM.zzEstrusSwellingBreasts.GetValueInt()
-	iBellySwellGlobal  = MCM.zzEstrusSwellingBelly.GetValueInt()
-	iButtSwellGlobal   = MCM.zzEstrusSwellingButt.GetValueInt()
+	iBellySwellGlobal = MCM.zzEstrusSwellingBelly.GetValueInt()
+	iButtSwellGlobal = MCM.zzEstrusSwellingButt.GetValueInt()
 endFunction
 
-event OnUpdateGameTime()
-	Utility.Wait( 5.0 )
-
-	Debug.Trace("_ES_::GTS::BIRTHING")
-	GoToState("BIRTHING")
-endEvent
 
 state IMPREGNATE
 	event OnBeginState()
@@ -197,11 +391,11 @@ state INCUBATION_NODE
 			while ( !kTarget.Is3DLoaded() )
 				Utility.Wait( 1.0 )
 			endWhile
-			fGameTime       = Utility.GetCurrentGameTime()
+			fGameTime = Utility.GetCurrentGameTime()
 			fInfectionSwell = ( fGameTime - fInfectionStart ) / 1.6666 ;1.6666
-			fBellySwell     = 0.0
-			fBreastSwell    = 0.0
-			fButtSwell      = 0.0
+			fBellySwell = 0.0
+			fBreastSwell = 0.0
+			fButtSwell = 0.0
 			
 			; SexLab Aroused ==================================================
 			manageSexLabAroused(1)
@@ -209,10 +403,10 @@ state INCUBATION_NODE
 			; BREAST SWELL ====================================================
 			iBreastSwellGlobal = MCM.zzEstrusSwellingBreasts.GetValueInt()
 			if ( bBreastEnabled && iBreastSwellGlobal )
-				fBreastSwell       = fInfectionSwell / iBreastSwellGlobal
-				fPregBreast        = fOrigBreast + fBreastSwell
+				fBreastSwell = fInfectionSwell / iBreastSwellGlobal
+				fPregBreast = fOrigBreast + fBreastSwell
 				if bTorpedoFixEnabled
-					fPregBreast01  = fOrigBreast01 * (fOrigBreast / fPregBreast)
+					fPregBreast01 = fOrigBreast01 * (fOrigBreast / fPregBreast)
 				endIf
 
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
@@ -236,9 +430,9 @@ state INCUBATION_NODE
 				kTarget.SetAnimationVariableFloat("esBreastSwell", fBreastSwell)
 				MCM.SetNodeScaleBreast(kTarget, bIsFemale, fPregBreast, fPregBreast01)
 			elseIf ( bBreastEnabled && fPregBreast != fOrigBreast )
-				fPregBreast    = fOrigBreast
+				fPregBreast = fOrigBreast
 				if bTorpedoFixEnabled
-					fPregBreast01  = fOrigBreast01
+					fPregBreast01 = fOrigBreast01
 				endIf
 				
 				kTarget.SetAnimationVariableFloat("esBreastSwell", 0.0)
@@ -249,12 +443,12 @@ state INCUBATION_NODE
 			iBellySwellGlobal = MCM.zzEstrusSwellingBelly.GetValueInt()
 			if ( bBellyEnabled && iBellySwellGlobal )
 				
-				if iBellySwellGlobal == 1   ;fBellySwell = fInfectionSwell / iBellySwellGlobal
+				if iBellySwellGlobal == 1 ;fBellySwell = fInfectionSwell / iBellySwellGlobal
 					fBellySwell = (fInfectionSwell / iBellySwellGlobal) * 2 
 				else
 					fBellySwell = fInfectionSwell / iBellySwellGlobal
 				endif
-				fPregBelly  = fOrigBelly + fBellySwell
+				fPregBelly = fOrigBelly + fBellySwell
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
 					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
 					Sound.SetInstanceVolume( MCM.zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
@@ -279,7 +473,7 @@ state INCUBATION_NODE
 			iButtSwellGlobal = MCM.zzEstrusSwellingButt.GetValueInt()
 			if ( bButtEnabled && iButtSwellGlobal )
 				fButtSwell = fInfectionSwell / iButtSwellGlobal
-				fPregButt  = fOrigButt  + fButtSwell
+				fPregButt = fOrigButt + fButtSwell
 
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
 					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
@@ -367,11 +561,11 @@ state BIRTHING
 		if ( MCM.zzEstrusChaurusResidual.GetValueInt() == 1 )
 			float fResidualScale = MCM.zzEstrusChaurusResidualScale.GetValue()
 
-			fResiBreast  = fOrigBreast * fResidualScale
+			fResiBreast = fOrigBreast * fResidualScale
 			if bTorpedoFixEnabled
-				fOrigBreast01  = (fOrigBreast / fResiBreast)
+				fOrigBreast01 = (fOrigBreast / fResiBreast)
 			endIf
-			fOrigBreast  = fResiBreast
+			fOrigBreast = fResiBreast
 		endIf
 		
 		if kTarget == kPlayer
@@ -425,196 +619,3 @@ state AFTERMATH
 		; catch any pending updates
 	endEvent
 endState
-
-event OnEffectStart(Actor akTarget, Actor akCaster)
-	kTarget            = akTarget
-	kCaster            = akCaster
-	kPlayer            = Game.GetPlayer()
-	bDisableNodeChange = MCM.zzEstrusDisableNodeResize.GetValue() as Bool
-	bIsAnimating	   = false
-	
-	sSwellingMsgs      = new String[3]
-	sSwellingMsgs[0]   = "$ES_SWELLING_1_3RD"
-	sSwellingMsgs[1]   = "$ES_SWELLING_2_3RD"
-	sSwellingMsgs[2]   = "$ES_SWELLING_3_3RD"
-
-	GoToState("IMPREGNATE")
-	MCM.zzEstrusSpiderInfected.Mod( 1.0 )
-	kTarget.StopCombatAlarm()
-
-	Float fMinTime     = MCM.zzEstrusIncubationPeriod2.GetValue() * fIncubationTimeMin
-	Float fMaxTime     = MCM.zzEstrusIncubationPeriod2.GetValue() * fIncubationTimeMax
-	fIncubationTime    = Utility.RandomFloat( fMinTime, fMaxTime )
-	fInfectionStart    = Utility.GetCurrentGameTime()
-	fthisIncubation    = fInfectionStart + ( fIncubationTime / 24.0 )
-	bIsFemale          = kTarget.GetLeveledActorBase().GetSex() == 1
-	bTorpedoFixEnabled = MCM.zzEstrusChaurusTorpedoFix.GetValueInt() as Bool
-
-	;kCaster.PathToReference(kTarget, 1.0)
-	
-	if ( !kTarget.IsInFaction(MCM.zzEstrusSpiderBreederFaction) )
-		kTarget.AddToFaction(MCM.zzEstrusSpiderBreederFaction)
-	endIf
-
-	if kTarget == kPlayer
-		iIncubationIdx = 0
-		MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
-		MCM.kIncubationDue[iIncubationIdx] = kTarget
-
-		if kPlayer.GetAnimationVariableInt("i1stPerson") as bool
-			Game.ForceThirdPerson()
-		endIf
-	else
-		iIncubationIdx = MCM.kIncubationDue.Find(none, 1)
-		if iIncubationIdx != -1
-			MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
-			MCM.kIncubationDue[iIncubationIdx] = kTarget
-			
-			Quest ES = Quest.GetQuest("zzEstrusSpiderMCM")
-			(ES.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
-		else
-			kTarget.RemoveSpell(MCM.zzEstrusSpiderBreederAbility)
-			return
-		endif
-	endif
-
-	; SexLab Aroused
-	manageSexLabAroused(0)
-
-	bEnableSkirt02     = NetImmerse.HasNode(kTarget, MCM.NINODE_SKIRT02, false)
-	bEnableSkirt03     = NetImmerse.HasNode(kTarget, MCM.NINODE_SKIRT03, false)
-	bEnableBreast      = NetImmerse.HasNode(kTarget, MCM.NINODE_LEFT_BREAST, false) && NetImmerse.HasNode(kTarget, MCM.NINODE_RIGHT_BREAST, false)
-	bEnableButt        = NetImmerse.HasNode(kTarget, MCM.NINODE_LEFT_BUTT, false) && NetImmerse.HasNode(kTarget, MCM.NINODE_RIGHT_BUTT, false)
-	bEnableBelly       = NetImmerse.HasNode(kTarget, MCM.NINODE_BELLY, false)
-
-	if ( !bDisableNodeChange )
-		bBreastEnabled     = ( bEnableBreast && MCM.zzEstrusSwellingBreasts.GetValueInt() as bool )
-		bButtEnabled       = ( bEnableButt && MCM.zzEstrusSwellingButt.GetValueInt() as bool )
-		bBellyEnabled      = ( bEnableBelly && MCM.zzEstrusSwellingBelly.GetValueInt() as bool )
-
-		if ( bBreastEnabled && kTarget.GetLeveledActorBase().GetSex() == 1 )
-			fOrigBreast  = MCM.GetNodeTransformScale(kTarget, bIsFemale, MCM.NINODE_LEFT_BREAST)
-			if bTorpedoFixEnabled
-				fOrigBreast01  = MCM.GetNodeTransformScale(kTarget, bIsFemale, MCM.NINODE_LEFT_BREAST01)
-			endif
-		endif
-		if ( bButtEnabled )
-			fOrigButt    = MCM.GetNodeTransformScale(kTarget, bIsFemale, MCM.NINODE_LEFT_BUTT)
-		endif
-		if ( bBellyEnabled )
-			fOrigBelly       = MCM.GetNodeTransformScale(kTarget, bIsFemale, MCM.NINODE_BELLY)
-		endif
-	endif
-
-	if bEnableSkirt02
-		RegisterForSingleUpdate( fUpdateTime )
-		RegisterForSingleUpdateGameTime( fIncubationTime )
-	Else
-		Debug.MessageBox("$ES_INCOMPATIBLE")
-		kTarget.RemoveSpell(MCM.zzEstrusSpiderBreederAbility)
-	endif
-endEvent
-
-event OnEffectFinish(Actor akTarget, Actor akCaster)
-	MCM.zzEstrusSpiderInfected.Mod( -1.0 )
-	bUninstall = MCM.zzEstrusSpiderUninstall.GetValueInt() as Bool
-
-	if iIncubationIdx != -1
-		MCM.fIncubationDue[iIncubationIdx] = 0.0
-		MCM.kIncubationDue[iIncubationIdx] = None
-		if kTarget != kPlayer
-			;(ES.GetAlias(iIncubationIdx) as ReferenceAlias).Clear()
-		endif
-	endIf
-
-	if ( kTarget.IsInFaction(MCM.zzEstrusSpiderBreederFaction) )
-		kTarget.RemoveFromFaction(MCM.zzEstrusSpiderBreederFaction)
-	endIf
-
-	; if we are uninstalling, report the first 128 infected NPCs
-	if ( bUninstall )
-		iIncubationIdx = MCM.kIncubationOff.Find(none)
-		if ( iIncubationIdx >= 0 )
-			MCM.kIncubationOff[iIncubationIdx] = kTarget
-		endif
-	endIf
-	
-	; SexLab Aroused
-	manageSexLabAroused()
-
-	if ( !bDisableNodeChange )
-		; make sure we have loaded 3d to access
-		while ( !kTarget.Is3DLoaded() || kTarget.IsOnMount() || Utility.IsInMenuMode() )
-			Utility.Wait( 1.0 )
-		endWhile
-
-		if ( bBellyEnabled )
-			MCM.SetNodeScaleBelly(kTarget, bIsFemale, fOrigBelly)
-		endif
-
-		if ( bButtEnabled )
-			MCM.SetNodeScaleButt(kTarget, bIsFemale, fOrigButt)
-		endif
-
-		if ( bBreastEnabled )
-			MCM.SetNodeScaleBreast(kTarget, bIsFemale, fOrigBreast, fOrigBreast01)
-		endif
-		
-		triggerNodeUpdate(true)
-	endif
-endEvent
-
-
-Actor kTarget            = None
-Actor kCaster            = None
-Actor kPlayer            = None
-Bool  bDisableNodeChange = False
-Bool  bEnableBreast      = False
-Bool  bEnableButt        = False
-Bool  bEnableBelly       = False
-Bool  bEnableSkirt02     = False
-Bool  bEnableSkirt03     = False
-Bool  bBreastEnabled     = False
-Bool  bButtEnabled       = False
-Bool  bBellyEnabled      = False
-Bool  bUninstall         = False
-Bool  bIsFemale          = False
-Bool  bTorpedoFixEnabled = True
-Float fOrigBreast        = 1.0
-Float fPregBreast        = 1.0
-Float fResiBreast        = 1.0
-Float fOrigBreast01      = 1.0
-Float fPregBreast01      = 1.0
-Float fOrigButt      = 1.0
-Float fPregButt          = 1.0
-Float fOrigBelly         = 1.0
-Float fPregBelly         = 1.0
-Float fInfectionStart    = 0.0
-Float fInfectionSwell    = 0.0
-Float fInfectionLastMsg  = 0.0
-Float fBreastSwell       = 0.0
-Int   iBreastSwellGlobal = 0
-Float fButtSwell         = 0.0
-Int   iButtSwellGlobal   = 0
-Float fBellySwell        = 0.0
-Int   iBellySwellGlobal  = 0
-Float fUpdateTime        = 5.0
-Float fWaitingTime       = 10.0
-Float fOviparityTime     = 7.5
-; * zzEstrusIncubationPeriod2 ( days )
-Float fIncubationTimeMin = 22.6
-Float fIncubationTimeMax = 26.6
-Float fthisIncubation    = 0.0
-Float fGameTime          = 0.0
-Int iIncubationIdx       = -1
-Int iBirthingLoops       = 3
-; SexLab Aroused
-Int iOrigSLAExposureRank = -3
-Int iAnimationIndex      = 1
-bool bIsAnimating		 = false
-
-String[] sSwellingMsgs
-
-zzEstrusSpiderMCMscript  Property MCM                            Auto 
-
-Float                    Property fIncubationTime                Auto

@@ -1,4 +1,4 @@
-Scriptname zzestrusspider_BodyMod extends Quest
+Scriptname zzEstrusSpider_BodyMod extends Quest
 
 Function SetNodeScale(Actor akActor, string nodeName, float value, bool isFemale)
 	string modName = "Estrus_Spider"

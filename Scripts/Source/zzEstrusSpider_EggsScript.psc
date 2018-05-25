@@ -1,23 +1,23 @@
-Scriptname zzSpiderEggsScript extends ObjectReference  
+Scriptname zzEstrusSpider_EggsScript extends ObjectReference  
 
-GlobalVariable            Property zzEstrusFertilityChance2  Auto  
+GlobalVariable            Property zzEstrusSpiderFertilityChance  Auto  
 GlobalVariable            Property zzEstrusSpiderInfestation  Auto  
-ActorBase                 Property zzEncSpiderHachling  Auto  
+ActorBase                 Property zzEstrusSpiderHachling  Auto  
 ImpactDataSet             Property MAGSpiderSpitImpactSet  Auto  
-zzEstrusSpiderMCMScript   Property MCM Auto
+zzEstrusSpider_MCMScript  Property MCM Auto
 
-Bool bIsTested             = False
-Actor SpiderHachling      = None
-Float fUpdate              = 0.0
-Int iIncubationIdx         = 0
-ObjectReference kContainer = none
+Bool bIsTested             	= False
+Actor SpiderHachling 		= None
+Float fUpdate             	= 0.0
+Int iIncubationIdx        	= 0
+ObjectReference kContainer 	= none
 
 function hatch()
 	PlayImpactEffect(MAGSpiderSpitImpactSet, "Egg:0")
 	if !kContainer
-		SpiderHachling = PlaceActorAtMe( zzEncSpiderHachling ).EvaluatePackage()
+		SpiderHachling = PlaceActorAtMe( zzEstrusSpiderHachling ).EvaluatePackage()
 	else
-		SpiderHachling = kContainer.PlaceActorAtMe( zzEncSpiderHachling ).EvaluatePackage()
+		SpiderHachling = kContainer.PlaceActorAtMe( zzEstrusSpiderHachling ).EvaluatePackage()
 	endIf
 
 	MCM.fHatchingDue[iIncubationIdx] = 0.0
@@ -26,7 +26,7 @@ function hatch()
 endFunction
 
 Event OnLoad()
-	if ( !bIsTested && zzEstrusSpiderInfestation.GetValueInt() as bool && Utility.RandomInt( 0, 100 ) < zzEstrusFertilityChance2.GetValueInt() )
+	if ( !bIsTested && zzEstrusSpiderInfestation.GetValueInt() as bool && Utility.RandomInt( 0, 100 ) < zzEstrusSpiderFertilityChance.GetValueInt() )
 		bIsTested = True
 		fUpdate = Utility.RandomFloat( 48.0, 96.0 )
 
