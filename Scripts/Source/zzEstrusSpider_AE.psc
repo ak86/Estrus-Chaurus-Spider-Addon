@@ -162,13 +162,39 @@ function SpiderSpitAttack(Actor akVictim, Actor akAgressor)
 			if utility.randomint(1,100) <= mcm.ParalyzeSpitChance
 				zzEstrusSpiderAnimationCooldown.cast(akVictim,akVictim)
 				
-				Spell paralyzeSpell = (Game.GetFormFromFile(0x52DE4 , "EstrusSpider.esp") as Spell)
-				if paralyzeSpell
-					paralyzeSpell.cast(akAgressor,akVictim)
+;				Spell paralyzeSpell = (Game.GetFormFromFile(0x52DE4 , "EstrusSpider.esp") as Spell)
+;				if paralyzeSpell
+;					paralyzeSpell.cast(akVictim,akVictim)
+;					
+;					;cocoon test
+;					if akVictim == game.GetPlayer()
+;						;disable pc moving
+;						Game.DisablePlayerControls()
+;					Else
+;						;disable npc moving
+;						akVictim.Setunconscious(true)
+;					EndIf
+;					Debug.SendAnimationEvent(akVictim,"ZapWriPose14")
+;					;akVictim.EquipItem(Game.GetFormFromFile(0x5960, "ZaZAnimationPack.esm"), 1, true)
+;					;akVictim.EquipItem(Game.GetFormFromFile(0x6436 , "ZaZAnimationPack.esm"), 1, true)
+;
+;					;Utility.wait(20.0)
+;					akVictim.dispelSpell(paralyzeSpell)
 					Utility.wait(2.0)
-					akVictim.dispelSpell(paralyzeSpell)
-					Utility.wait(1.0)
-			   endif
+;
+;					;akVictim.UNEquipItem(Game.GetFormFromFile(0x5960, "ZaZAnimationPack.esm"), true)
+;					;akVictim.UNEquipItem(Game.GetFormFromFile(0x6436 , "ZaZAnimationPack.esm"), true)
+;					;akVictim.RemoveItem(Game.GetFormFromFile(0x5960, "ZaZAnimationPack.esm"), 1, true)
+;					;akVictim.RemoveItem(Game.GetFormFromFile(0x6436 , "ZaZAnimationPack.esm"), 1, true)
+;					Debug.SendAnimationEvent(akVictim, "IdleForceDefaultState")
+;					if akVictim == game.GetPlayer()
+;						;enable pc moving
+;						Game.EnablePlayerControls()
+;					Else
+;						;enable npc moving
+;						akVictim.Setunconscious(false)
+;					EndIf
+;			   endif
 				
 				if ESevents.OnESStartAnimation_xjAlt(self, akVictim, akAgressor)
 					if !akAgressor.IsInFaction(mcm.zzEstrusSpiderBreederFaction) 
